@@ -1,0 +1,2092 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+================================================================
+File Summary
+================================================================
+
+Purpose:
+--------
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+
+File Format:
+------------
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Multiple file entries, each consisting of:
+  a. A separator line (================)
+  b. The file path (File: path/to/file)
+  c. Another separator line
+  d. The full contents of the file
+  e. A blank line
+
+Usage Guidelines:
+-----------------
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+
+Notes:
+------
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+
+Additional Info:
+----------------
+
+================================================================
+Directory Structure
+================================================================
+.gitignore
+eslint.config.js
+index.html
+package.json
+postcss.config.cjs
+public/vite.svg
+README.md
+src/App.css
+src/App.tsx
+src/assets/react.svg
+src/components/Modal.jsx
+src/components/Navbar.jsx
+src/contexts/AuthContext.jsx
+src/index.css
+src/main.tsx
+src/pages/CreateSnippetPage.jsx
+src/pages/HomePage.jsx
+src/pages/LatestSnippetsPage.jsx
+src/pages/LoginPage.jsx
+src/pages/RegisterPage.jsx
+src/pages/ViewSnippetPage.jsx
+src/services/api.js
+src/vite-env.d.ts
+tailwind.config.js
+tsconfig.app.json
+tsconfig.json
+tsconfig.node.json
+vite.config.ts
+
+================================================================
+Files
+================================================================
+
+================
+File: .gitignore
+================
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+================
+File: eslint.config.js
+================
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import tseslint from 'typescript-eslint'
+
+export default tseslint.config(
+  { ignores: ['dist'] },
+  {
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+    },
+    plugins: {
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
+    },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true },
+      ],
+    },
+  },
+)
+
+================
+File: index.html
+================
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + React + TS</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
+================
+File: package.json
+================
+{
+  "name": "codenest-vite",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@radix-ui/react-checkbox": "^1.1.4",
+    "@radix-ui/react-label": "^2.1.2",
+    "@radix-ui/react-slot": "^1.1.2",
+    "@radix-ui/react-toast": "^1.2.6",
+    "@radix-ui/react-tooltip": "^1.1.8",
+    "axios": "^1.8.4",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "highlight.js": "^11.11.1",
+    "lucide-react": "^0.483.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.4.0",
+    "react-syntax-highlighter": "^15.6.1",
+    "tailwind-merge": "^3.0.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "@tailwindcss/postcss": "^4.0.15",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.21.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^15.15.0",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.0.15",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.24.1",
+    "vite": "^6.2.0"
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+}
+
+================
+File: postcss.config.cjs
+================
+// postcss.config.cjs
+module.exports = {
+    plugins: {
+        '@tailwindcss/postcss': {},  // Use the specific package mentioned in the error
+        autoprefixer: {},
+    },
+};
+
+================
+File: public/vite.svg
+================
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="31.88" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 257"><defs><linearGradient id="IconifyId1813088fe1fbc01fb466" x1="-.828%" x2="57.636%" y1="7.652%" y2="78.411%"><stop offset="0%" stop-color="#41D1FF"></stop><stop offset="100%" stop-color="#BD34FE"></stop></linearGradient><linearGradient id="IconifyId1813088fe1fbc01fb467" x1="43.376%" x2="50.316%" y1="2.242%" y2="89.03%"><stop offset="0%" stop-color="#FFEA83"></stop><stop offset="8.333%" stop-color="#FFDD35"></stop><stop offset="100%" stop-color="#FFA800"></stop></linearGradient></defs><path fill="url(#IconifyId1813088fe1fbc01fb466)" d="M255.153 37.938L134.897 252.976c-2.483 4.44-8.862 4.466-11.382.048L.875 37.958c-2.746-4.814 1.371-10.646 6.827-9.67l120.385 21.517a6.537 6.537 0 0 0 2.322-.004l117.867-21.483c5.438-.991 9.574 4.796 6.877 9.62Z"></path><path fill="url(#IconifyId1813088fe1fbc01fb467)" d="M185.432.063L96.44 17.501a3.268 3.268 0 0 0-2.634 3.014l-5.474 92.456a3.268 3.268 0 0 0 3.997 3.378l24.777-5.718c2.318-.535 4.413 1.507 3.936 3.838l-7.361 36.047c-.495 2.426 1.782 4.5 4.151 3.78l15.304-4.649c2.372-.72 4.652 1.36 4.15 3.788l-11.698 56.621c-.732 3.542 3.979 5.473 5.943 2.437l1.313-2.028l72.516-144.72c1.215-2.423-.88-5.186-3.54-4.672l-25.505 4.922c-2.396.462-4.435-1.77-3.759-4.114l16.646-57.705c.677-2.35-1.37-4.583-3.769-4.113Z"></path></svg>
+
+================
+File: README.md
+================
+# React + TypeScript + Vite
+
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+
+Currently, two official plugins are available:
+
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+
+```js
+export default tseslint.config({
+  extends: [
+    // Remove ...tseslint.configs.recommended and replace with this
+    ...tseslint.configs.recommendedTypeChecked,
+    // Alternatively, use this for stricter rules
+    ...tseslint.configs.strictTypeChecked,
+    // Optionally, add this for stylistic rules
+    ...tseslint.configs.stylisticTypeChecked,
+  ],
+  languageOptions: {
+    // other options...
+    parserOptions: {
+      project: ['./tsconfig.node.json', './tsconfig.app.json'],
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+})
+```
+
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default tseslint.config({
+  plugins: {
+    // Add the react-x and react-dom plugins
+    'react-x': reactX,
+    'react-dom': reactDom,
+  },
+  rules: {
+    // other rules...
+    // Enable its recommended typescript rules
+    ...reactX.configs['recommended-typescript'].rules,
+    ...reactDom.configs.recommended.rules,
+  },
+})
+```
+
+================
+File: src/App.css
+================
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+================
+File: src/App.tsx
+================
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import Navbar from "./components/Navbar";
+import HomePage from "./pages/HomePage";
+import CreateSnippetPage from "./pages/CreateSnippetPage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import ViewSnippetPage from "./pages/ViewSnippetPage";
+import LatestSnippetsPage from "./pages/LatestSnippetsPage";
+
+function App() {
+    return (
+        <AuthProvider>
+            <BrowserRouter>
+                <div className="grain" style={{ minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
+                    {/* Purple gradient effects */}
+                    <div className="purple-glow"></div>
+                    <div className="purple-glow-bottom"></div>
+
+                    <Navbar />
+                    <main>
+                        <Routes>
+                            <Route path="/" element={<HomePage />} />
+                            <Route path="/code/new" element={<CreateSnippetPage />} />
+                            <Route path="/code/latest" element={<LatestSnippetsPage />} />
+                            <Route path="/code/:uuid" element={<ViewSnippetPage />} />
+                            <Route path="/login" element={<LoginPage />} />
+                            <Route path="/register" element={<RegisterPage />} />
+                            <Route path="*" element={<div style={{ textAlign: 'center', padding: '5rem' }}>Page not found</div>} />
+                        </Routes>
+                    </main>
+                </div>
+            </BrowserRouter>
+        </AuthProvider>
+    );
+}
+
+export default App;
+
+================
+File: src/assets/react.svg
+================
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="35.93" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 228"><path fill="#00D8FF" d="M210.483 73.824a171.49 171.49 0 0 0-8.24-2.597c.465-1.9.893-3.777 1.273-5.621c6.238-30.281 2.16-54.676-11.769-62.708c-13.355-7.7-35.196.329-57.254 19.526a171.23 171.23 0 0 0-6.375 5.848a155.866 155.866 0 0 0-4.241-3.917C100.759 3.829 77.587-4.822 63.673 3.233C50.33 10.957 46.379 33.89 51.995 62.588a170.974 170.974 0 0 0 1.892 8.48c-3.28.932-6.445 1.924-9.474 2.98C17.309 83.498 0 98.307 0 113.668c0 15.865 18.582 31.778 46.812 41.427a145.52 145.52 0 0 0 6.921 2.165a167.467 167.467 0 0 0-2.01 9.138c-5.354 28.2-1.173 50.591 12.134 58.266c13.744 7.926 36.812-.22 59.273-19.855a145.567 145.567 0 0 0 5.342-4.923a168.064 168.064 0 0 0 6.92 6.314c21.758 18.722 43.246 26.282 56.54 18.586c13.731-7.949 18.194-32.003 12.4-61.268a145.016 145.016 0 0 0-1.535-6.842c1.62-.48 3.21-.974 4.76-1.488c29.348-9.723 48.443-25.443 48.443-41.52c0-15.417-17.868-30.326-45.517-39.844Zm-6.365 70.984c-1.4.463-2.836.91-4.3 1.345c-3.24-10.257-7.612-21.163-12.963-32.432c5.106-11 9.31-21.767 12.459-31.957c2.619.758 5.16 1.557 7.61 2.4c23.69 8.156 38.14 20.213 38.14 29.504c0 9.896-15.606 22.743-40.946 31.14Zm-10.514 20.834c2.562 12.94 2.927 24.64 1.23 33.787c-1.524 8.219-4.59 13.698-8.382 15.893c-8.067 4.67-25.32-1.4-43.927-17.412a156.726 156.726 0 0 1-6.437-5.87c7.214-7.889 14.423-17.06 21.459-27.246c12.376-1.098 24.068-2.894 34.671-5.345a134.17 134.17 0 0 1 1.386 6.193ZM87.276 214.515c-7.882 2.783-14.16 2.863-17.955.675c-8.075-4.657-11.432-22.636-6.853-46.752a156.923 156.923 0 0 1 1.869-8.499c10.486 2.32 22.093 3.988 34.498 4.994c7.084 9.967 14.501 19.128 21.976 27.15a134.668 134.668 0 0 1-4.877 4.492c-9.933 8.682-19.886 14.842-28.658 17.94ZM50.35 144.747c-12.483-4.267-22.792-9.812-29.858-15.863c-6.35-5.437-9.555-10.836-9.555-15.216c0-9.322 13.897-21.212 37.076-29.293c2.813-.98 5.757-1.905 8.812-2.773c3.204 10.42 7.406 21.315 12.477 32.332c-5.137 11.18-9.399 22.249-12.634 32.792a134.718 134.718 0 0 1-6.318-1.979Zm12.378-84.26c-4.811-24.587-1.616-43.134 6.425-47.789c8.564-4.958 27.502 2.111 47.463 19.835a144.318 144.318 0 0 1 3.841 3.545c-7.438 7.987-14.787 17.08-21.808 26.988c-12.04 1.116-23.565 2.908-34.161 5.309a160.342 160.342 0 0 1-1.76-7.887Zm110.427 27.268a347.8 347.8 0 0 0-7.785-12.803c8.168 1.033 15.994 2.404 23.343 4.08c-2.206 7.072-4.956 14.465-8.193 22.045a381.151 381.151 0 0 0-7.365-13.322Zm-45.032-43.861c5.044 5.465 10.096 11.566 15.065 18.186a322.04 322.04 0 0 0-30.257-.006c4.974-6.559 10.069-12.652 15.192-18.18ZM82.802 87.83a323.167 323.167 0 0 0-7.227 13.238c-3.184-7.553-5.909-14.98-8.134-22.152c7.304-1.634 15.093-2.97 23.209-3.984a321.524 321.524 0 0 0-7.848 12.897Zm8.081 65.352c-8.385-.936-16.291-2.203-23.593-3.793c2.26-7.3 5.045-14.885 8.298-22.6a321.187 321.187 0 0 0 7.257 13.246c2.594 4.48 5.28 8.868 8.038 13.147Zm37.542 31.03c-5.184-5.592-10.354-11.779-15.403-18.433c4.902.192 9.899.29 14.978.29c5.218 0 10.376-.117 15.453-.343c-4.985 6.774-10.018 12.97-15.028 18.486Zm52.198-57.817c3.422 7.8 6.306 15.345 8.596 22.52c-7.422 1.694-15.436 3.058-23.88 4.071a382.417 382.417 0 0 0 7.859-13.026a347.403 347.403 0 0 0 7.425-13.565Zm-16.898 8.101a358.557 358.557 0 0 1-12.281 19.815a329.4 329.4 0 0 1-23.444.823c-7.967 0-15.716-.248-23.178-.732a310.202 310.202 0 0 1-12.513-19.846h.001a307.41 307.41 0 0 1-10.923-20.627a310.278 310.278 0 0 1 10.89-20.637l-.001.001a307.318 307.318 0 0 1 12.413-19.761c7.613-.576 15.42-.876 23.31-.876H128c7.926 0 15.743.303 23.354.883a329.357 329.357 0 0 1 12.335 19.695a358.489 358.489 0 0 1 11.036 20.54a329.472 329.472 0 0 1-11 20.722Zm22.56-122.124c8.572 4.944 11.906 24.881 6.52 51.026c-.344 1.668-.73 3.367-1.15 5.09c-10.622-2.452-22.155-4.275-34.23-5.408c-7.034-10.017-14.323-19.124-21.64-27.008a160.789 160.789 0 0 1 5.888-5.4c18.9-16.447 36.564-22.941 44.612-18.3ZM128 90.808c12.625 0 22.86 10.235 22.86 22.86s-10.235 22.86-22.86 22.86s-22.86-10.235-22.86-22.86s10.235-22.86 22.86-22.86Z"></path></svg>
+
+================
+File: src/components/Modal.jsx
+================
+// src/components/Modal.jsx
+import React from 'react';
+
+const Modal = ({ children, headerContent, bodyContent }) => {
+    return (
+        <div className="shadow-lg flex flex-col m-auto bg-dark overflow-hidden border border-orchid/10 rounded-3xl max-w-[400px] w-full">
+            <div className="flex flex-col items-center border-b border-[#0D0C10] p-6">
+                {headerContent}
+            </div>
+            <div className="flex flex-col border-t border-orchid/10 p-6">
+                {bodyContent}
+            </div>
+        </div>
+    );
+};
+
+export default Modal;
+
+================
+File: src/components/Navbar.jsx
+================
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+
+const Navbar = () => {
+    const location = useLocation();
+    const { isAuthenticated, currentUser, logout } = useAuth();
+
+    const isActive = (path) => location.pathname === path;
+
+    const handleLogout = async () => {
+        await logout();
+        window.location.href = '/';
+    };
+
+    return (
+        <header style={{ width: '100%', borderBottom: '1px solid rgba(111, 50, 240, 0.05)' }}>
+            <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.5rem 1.5rem' }}>
+                <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white', margin: 0 }}>
+                        Code<span style={{ color: 'rgba(188, 164, 245, 0.3)' }}>.</span><span style={{ color: '#8F69FA' }}>Nest</span>
+                    </h1>
+                </Link>
+
+                <nav style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                    <Link
+                        to="/"
+                        style={{
+                            fontSize: '0.875rem',
+                            fontWeight: '500',
+                            color: isActive('/') ? '#673CE3' : '#9C95AC',
+                            textDecoration: 'none',
+                            transition: 'color 0.2s'
+                        }}
+                    >
+                        Home
+                    </Link>
+
+                    {/* Latest link removed for privacy reasons */}
+
+                    {isAuthenticated ? (
+                        <>
+                            <Link
+                                to="/code/new"
+                                style={{
+                                    fontSize: '0.875rem',
+                                    fontWeight: '500',
+                                    color: isActive('/code/new') ? '#673CE3' : '#9C95AC',
+                                    textDecoration: 'none',
+                                    transition: 'color 0.2s'
+                                }}
+                            >
+                                New Snippet
+                            </Link>
+                            <div style={{ color: '#9C95AC', fontSize: '0.875rem' }}>
+                                Welcome, <span style={{ color: '#673CE3' }}>{currentUser?.name}</span>
+                            </div>
+                            <button
+                                onClick={handleLogout}
+                                style={{
+                                    fontSize: '0.875rem',
+                                    fontWeight: '500',
+                                    color: '#9C95AC',
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Logout
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <Link
+                                to="/register"
+                                style={{
+                                    fontSize: '0.875rem',
+                                    fontWeight: '500',
+                                    color: isActive('/register') ? '#673CE3' : '#9C95AC',
+                                    textDecoration: 'none',
+                                    transition: 'color 0.2s'
+                                }}
+                            >
+                                Register
+                            </Link>
+                            <Link
+                                to="/login"
+                                className="btn-primary"
+                            >
+                                Login
+                            </Link>
+                        </>
+                    )}
+                </nav>
+            </div>
+        </header>
+    );
+};
+
+export default Navbar;
+
+================
+File: src/contexts/AuthContext.jsx
+================
+import React, { createContext, useState, useContext, useEffect } from 'react';
+
+const AuthContext = createContext(null);
+
+export const AuthProvider = ({ children }) => {
+    const [currentUser, setCurrentUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    // Existing code for initial auth check
+    useEffect(() => {
+        const checkLoginStatus = async () => {
+            try {
+                const response = await fetch('/api/auth/me', {
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    setCurrentUser(userData); // 👈 This now uses the full user object
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        checkLoginStatus();
+    }, []);
+
+    // Modified login function
+    const loginUser = async (email, password, remember) => {
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, remember }),
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Fetch complete user data after login
+                const userResponse = await fetch('/api/auth/me', {
+                    credentials: 'include'
+                });
+                const userData = await userResponse.json();
+                setCurrentUser(userData); // 👈 Set full user object
+                return { success: true };
+            }
+            return { success: false, message: data.message || 'Login failed' };
+        } catch (error) {
+            return { success: false, message: 'An error occurred' };
+        }
+    };
+
+    // Add this new function to update user state
+    const setUser = (userData) => {
+        setCurrentUser({
+            uuid: userData.uuid,
+            name: userData.name,
+            email: userData.email
+        });
+    };
+
+    const logoutUser = async () => {
+        try {
+            await fetch('/api/logout', {
+                method: 'POST',
+                credentials: 'include'
+            });
+            setCurrentUser(null);
+            return true;
+        } catch (error) {
+            console.error('Logout failed:', error);
+            return false;
+        }
+    };
+
+    const value = {
+        currentUser,
+        isAuthenticated: !!currentUser,
+        loading,
+        login: loginUser, // 👈 Renamed function
+        logout: logoutUser,
+        setUser // 👈 Expose the setter
+    };
+
+    return (
+        <AuthContext.Provider value={value}>
+            {children}
+        </AuthContext.Provider>
+    );
+};
+
+export const useAuth = () => {
+    return useContext(AuthContext);
+};
+
+================
+File: src/index.css
+================
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+body {
+  background-color: #0D0D11;
+  color: white;
+  font-family: system-ui, -apple-system, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Grain effect */
+.grain {
+  position: relative;
+}
+
+.grain::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("./grain.png");
+  background-size: cover;
+  opacity: 0.05;
+  z-index: -1;
+}
+
+/* Purple glows */
+.purple-glow {
+  position: absolute;
+  width: 40rem;
+  height: 10rem;
+  border-radius: 50%;
+  filter: blur(100px);
+  z-index: -1;
+  background-color: rgba(111, 50, 240, 0.25);
+  left: 50%;
+  transform: translateX(-50%);
+  top: -48px;
+}
+
+.purple-glow-bottom {
+  position: absolute;
+  width: 40rem;
+  height: 10rem;
+  border-radius: 50%;
+  filter: blur(200px);
+  z-index: -1;
+  background-color: rgba(111, 50, 240, 1);
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -24rem;
+}
+
+/* Component styles */
+.card {
+  background-color: #16151C;
+  border: 1px solid rgba(188, 156, 255, 0.1);
+  border-radius: 1.5rem;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.card-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(13, 12, 16, 1);
+}
+
+.card-body {
+  padding: 1.5rem;
+  border-top: 1px solid rgba(188, 156, 255, 0.1);
+}
+
+.btn-primary {
+  background-color: #673CE3;
+  color: white;
+  font-weight: 600;
+  padding: 0.625rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+  display: inline-block;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: inset 0px 2px 1px -1px rgba(255, 255, 255, 0.12), inset 0px 0px 0px 1px rgba(255, 255, 255, 0.05);
+}
+
+.btn-primary:hover {
+  background-color: #774BF3;
+}
+
+.btn-secondary {
+  background-color: #2D2A3D;
+  border: 1px solid rgba(188, 156, 255, 0.1);
+  color: #9C95AC;
+  padding: 0.625rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  cursor: pointer;
+  display: inline-block;
+  text-align: center;
+  text-decoration: none;
+}
+
+.btn-secondary:hover {
+  color: white;
+}
+
+.input-field {
+  width: 100%;
+  background-color: rgba(22, 21, 28, 0.5);
+  border: 1px solid rgba(188, 156, 255, 0.1);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  color: white;
+  font-size: 0.875rem;
+  box-shadow: inset 0px 2px 1px -1px rgba(255, 255, 255, 0.12), inset 0px 0px 0px 1px rgba(255, 255, 255, 0.05);
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: #673CE3;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.text-primary {
+  color: #9C95AC;
+}
+
+.text-purple {
+  color: #673CE3;
+}
+
+================
+File: src/main.tsx
+================
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.tsx'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+
+================
+File: src/pages/CreateSnippetPage.jsx
+================
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { snippetService } from '../services/api';
+
+const CreateSnippetPage = () => {
+    const [code, setCode] = useState('');
+    const [timeLimit, setTimeLimit] = useState(0);
+    const [viewLimit, setViewLimit] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
+    const navigate = useNavigate();
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!code.trim()) return;
+
+        setIsLoading(true);
+
+        try {
+            const response = await snippetService.create({
+                code,
+                timeLimit: parseInt(timeLimit) || 0,
+                viewLimit: parseInt(viewLimit) || 0
+            });
+
+            if (response.uuid) {
+                // Navigate to the view page with a flag to skip counting
+                navigate(`/code/${response.uuid}?skipIncrement=true`);
+            } else {
+                throw new Error('Failed to create snippet - no UUID returned');
+            }
+        } catch (error) {
+            console.error('Error creating snippet:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="container mx-auto px-6 py-12">
+            <div className="max-w-3xl mx-auto">
+                <div className="card">
+                    <div className="border-b border-opacity-10" style={{ borderColor: '#673CE3', padding: '1.25rem 1.5rem' }}>
+                        <h2 className="font-bold text-xl text-white">Create a Vanishing Code Snippet</h2>
+                    </div>
+
+                    <form onSubmit={handleSubmit} style={{ padding: '1.5rem' }}>
+                        <div className="mb-6">
+                            <label htmlFor="code" className="block text-sm font-medium text-gray-400 mb-2">
+                                Code
+                            </label>
+                            <textarea
+                                id="code"
+                                value={code}
+                                onChange={(e) => setCode(e.target.value)}
+                                className="input-field"
+                                style={{ minHeight: '300px', fontFamily: 'monospace' }}
+                                placeholder="Paste your code here..."
+                                required
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label htmlFor="timeLimit" className="block text-sm font-medium text-gray-400 mb-2">
+                                    Time Limit (minutes)
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        id="timeLimit"
+                                        value={timeLimit}
+                                        onChange={(e) => setTimeLimit(parseInt(e.target.value) || 0)}
+                                        className="input-field pr-16"
+                                        min="0"
+                                        placeholder="0 for no limit"
+                                    />
+                                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400 text-sm">
+                                        minutes
+                                    </div>
+                                </div>
+                                <p className="text-xs text-gray-400 mt-1">
+                                    {timeLimit === 0 ? "No time limit" : `Expires after ${timeLimit} minute${timeLimit === 1 ? '' : 's'}`}
+                                </p>
+                            </div>
+
+                            <div>
+                                <label htmlFor="viewLimit" className="block text-sm font-medium text-gray-400 mb-2">
+                                    View Limit
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        id="viewLimit"
+                                        value={viewLimit}
+                                        onChange={(e) => setViewLimit(parseInt(e.target.value) || 0)}
+                                        className="input-field pr-12"
+                                        min="0"
+                                        placeholder="0 for no limit"
+                                    />
+                                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400 text-sm">
+                                        views
+                                    </div>
+                                </div>
+                                <p className="text-xs text-gray-400 mt-1">
+                                    {viewLimit === 0 ? "No view limit" : `Vanishes after ${viewLimit} view${viewLimit === 1 ? '' : 's'}`}
+                                </p>
+                            </div>
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={isLoading || !code.trim()}
+                            className="btn-primary w-full py-3"
+                            style={{ opacity: (isLoading || !code.trim()) ? 0.7 : 1, cursor: (isLoading || !code.trim()) ? 'not-allowed' : 'pointer' }}
+                        >
+                            {isLoading ? 'Creating...' : 'Generate Vanishing Snippet'}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default CreateSnippetPage;
+
+================
+File: src/pages/HomePage.jsx
+================
+import React from 'react';
+import { Link } from 'react-router-dom';
+
+const HomePage = () => {
+    return (
+        <div className="container" style={{ padding: '3rem 1.5rem' }}>
+            <div style={{ maxWidth: '64rem', margin: '0 auto' }}>
+                <div className="card">
+                    <div style={{ padding: '2rem 2rem', textAlign: 'center' }}>
+                        <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'white', marginBottom: '1.5rem' }}>
+                            Share Code Snippets with <span style={{ color: '#673CE3' }}>Smart Expiration</span>
+                        </h1>
+
+                        <p style={{ color: '#9C95AC', fontSize: '1.125rem', marginBottom: '2rem', maxWidth: '36rem', margin: '0 auto 2rem' }}>
+                            CodeNest lets you share code snippets with time or view limits. Perfect for sharing sensitive information or temporary solutions.
+                        </p>
+
+                        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1rem' }}>
+                            <Link
+                                to="/code/new"
+                                className="btn-primary"
+                                style={{ padding: '0.75rem 1.5rem' }}
+                            >
+                                Create Snippet
+                            </Link>
+
+                            {/* "View Latest" button removed for privacy reasons */}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Features section */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginTop: '3rem' }}>
+                    <FeatureCard
+                        title="Time-Based Expiry"
+                        description="Set your code snippets to automatically vanish after a specific time period, ensuring sensitive data doesn't linger."
+                        icon="⏱️"
+                    />
+                    <FeatureCard
+                        title="View Limits"
+                        description="Allow your snippet to be viewed only a certain number of times before it permanently vanishes."
+                        icon="👁️"
+                    />
+                    <FeatureCard
+                        title="End-to-End Security"
+                        description="Your code snippets are encrypted and secure, vanishing completely once they've expired."
+                        icon="🔒"
+                    />
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const FeatureCard = ({ title, description, icon }) => {
+    return (
+        <div className="card" style={{ padding: '1.5rem', transition: 'transform 0.2s, box-shadow 0.2s' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>{icon}</div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', marginBottom: '0.75rem' }}>{title}</h3>
+            <p style={{ color: '#9C95AC' }}>{description}</p>
+        </div>
+    );
+};
+
+export default HomePage;
+
+================
+File: src/pages/LatestSnippetsPage.jsx
+================
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+
+const LatestSnippetsPage = () => {
+    const [snippets, setSnippets] = useState([]);
+    const [authors, setAuthors] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchLatestSnippets = async () => {
+            try {
+                const data = await snippetService.getLatest();
+                setSnippets(data.snippets || []);
+                setAuthors(data.authors || []);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchLatestSnippets();
+    }, []);
+
+    if (loading) {
+        return (
+            <div style={{ textAlign: 'center', padding: '5rem 0' }}>
+                <div style={{ display: 'inline-block', width: '2rem', height: '2rem', borderRadius: '50%', borderTop: '3px solid #673CE3', borderRight: '3px solid transparent', animation: 'spin 1s linear infinite' }}>
+                    <style>
+                        {`
+              @keyframes spin {
+                to { transform: rotate(360deg); }
+              }
+            `}
+                    </style>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="container" style={{ padding: '3rem 1.5rem' }}>
+                <div style={{ maxWidth: '64rem', margin: '0 auto', textAlign: 'center' }}>
+                    <div className="card" style={{ padding: '2rem' }}>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white', marginBottom: '1rem' }}>
+                            Error Loading Snippets
+                        </h2>
+                        <p style={{ color: '#9C95AC', marginBottom: '1.5rem' }}>
+                            {error}
+                        </p>
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="btn-primary"
+                        >
+                            Try Again
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="container" style={{ padding: '3rem 1.5rem' }}>
+            <div style={{ maxWidth: '64rem', margin: '0 auto' }}>
+                <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'white', marginBottom: '2rem' }}>
+                    Latest Code Snippets
+                </h1>
+
+                {snippets.length === 0 ? (
+                    <div className="card" style={{ padding: '2rem', textAlign: 'center' }}>
+                        <p style={{ color: '#9C95AC', marginBottom: '1.5rem' }}>
+                            No snippets available yet.
+                        </p>
+                        <Link to="/code/new" className="btn-primary">
+                            Create First Snippet
+                        </Link>
+                    </div>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        {snippets.map((snippet, index) => (
+                            <div className="card" key={snippet.uuid}>
+                                <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', margin: 0 }}>
+                                        Snippet #{index + 1}
+                                    </h3>
+                                    <span style={{ color: '#9C95AC' }}>
+                    By: <span style={{ color: '#673CE3' }}>{authors[index]?.name || 'Unknown'}</span>
+                  </span>
+                                </div>
+                                <div className="card-body">
+                  <pre style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)', padding: '1rem', borderRadius: '0.5rem', overflow: 'auto', margin: '0 0 1rem', maxHeight: '150px' }}>
+                    <code>{snippet.code.length > 150 ? `${snippet.code.substring(0, 150)}...` : snippet.code}</code>
+                  </pre>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <small style={{ color: '#9C95AC' }}>Created: {snippet.date}</small>
+                                        <Link to={`/code/${snippet.uuid}`} className="btn-primary">
+                                            View Full Snippet
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default LatestSnippetsPage;
+
+================
+File: src/pages/LoginPage.jsx
+================
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+
+
+const LoginPage = () => {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [remember, setRemember] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const { login } = useAuth();
+    const navigate = useNavigate();
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError('');
+
+        try {
+            const result = await login(email, password, remember);
+
+            if (result.success) {
+                navigate('/');
+            } else {
+                setError(result.message || 'Login failed');
+            }
+        } catch (error) {
+            setError('An error occurred. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div style={{
+            width: '100%',
+            maxWidth: '100%',
+            padding: '3rem 1.5rem',
+            display: 'flex',
+            justifyContent: 'center'
+        }}>
+            <div style={{
+                width: '100%',
+                maxWidth: '28rem'
+            }}>
+                <div className="card" style={{
+                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                    overflow: 'hidden'
+                }}>
+                    <div className="card-header" style={{
+                        textAlign: 'center',
+                        padding: '2rem 1.5rem',
+                        borderBottom: '1px solid rgba(13, 12, 16, 1)'
+                    }}>
+                        <h2 style={{ fontSize: '1.75rem', fontWeight: 'bold', color: 'white', margin: 0 }}>Welcome Back</h2>
+                        <p style={{ color: '#9C95AC', marginTop: '0.5rem' }}>Enter your credentials to access your account</p>
+                    </div>
+
+                    <div style={{
+                        padding: '2rem',
+                        borderTop: '1px solid rgba(188, 156, 255, 0.1)'
+                    }}>
+                        {error && (
+                            <div style={{ backgroundColor: 'rgba(220, 38, 38, 0.1)', color: '#ef4444', padding: '0.75rem', borderRadius: '0.5rem', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+                                {error}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleSubmit}>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label htmlFor="email" style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#9C95AC', marginBottom: '0.5rem' }}>
+                                    Email
+                                </label>
+                                <input
+                                    type="email"
+                                    id="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.75rem 1rem',
+                                        backgroundColor: 'rgba(22, 21, 28, 0.5)',
+                                        border: '1px solid rgba(188, 156, 255, 0.1)',
+                                        borderRadius: '0.5rem',
+                                        color: 'white',
+                                        fontSize: '0.875rem',
+                                        boxSizing: 'border-box',
+                                        boxShadow: 'inset 0px 2px 1px -1px rgba(255, 255, 255, 0.12), inset 0px 0px 0px 1px rgba(255, 255, 255, 0.05)',
+                                        transition: 'border-color 0.2s',
+                                        margin: '0'
+                                    }}
+                                    required
+                                    placeholder="you@example.com"
+                                />
+                            </div>
+
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                    <label htmlFor="password" style={{ fontSize: '0.875rem', fontWeight: '500', color: '#9C95AC' }}>
+                                        Password
+                                    </label>
+                                    <a href="#" style={{ fontSize: '0.75rem', color: '#673CE3', textDecoration: 'none' }}>Forgot password?</a>
+                                </div>
+                                <input
+                                    type="password"
+                                    id="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.75rem 1rem',
+                                        backgroundColor: 'rgba(22, 21, 28, 0.5)',
+                                        border: '1px solid rgba(188, 156, 255, 0.1)',
+                                        borderRadius: '0.5rem',
+                                        color: 'white',
+                                        fontSize: '0.875rem',
+                                        boxSizing: 'border-box',
+                                        boxShadow: 'inset 0px 2px 1px -1px rgba(255, 255, 255, 0.12), inset 0px 0px 0px 1px rgba(255, 255, 255, 0.05)',
+                                        transition: 'border-color 0.2s',
+                                        margin: '0'
+                                    }}
+                                    required
+                                    placeholder="••••••••"
+                                />
+                            </div>
+
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={remember}
+                                        onChange={(e) => setRemember(e.target.checked)}
+                                        style={{
+                                            width: '1rem',
+                                            height: '1rem',
+                                            borderRadius: '0.25rem',
+                                            backgroundColor: remember ? '#673CE3' : 'transparent',
+                                            border: remember ? '1px solid #673CE3' : '1px solid rgba(188, 156, 255, 0.2)',
+                                            appearance: 'none',
+                                            cursor: 'pointer',
+                                            marginRight: '0.5rem'
+                                        }}
+                                    />
+                                    <span style={{ fontSize: '0.875rem', color: '#9C95AC' }}>Remember me for 30 days</span>
+                                </label>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem',
+                                    backgroundColor: '#673CE3',
+                                    color: 'white',
+                                    fontWeight: '600',
+                                    borderRadius: '0.5rem',
+                                    border: 'none',
+                                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                                    opacity: isLoading ? 0.7 : 1,
+                                    transition: 'background-color 0.2s, transform 0.1s',
+                                    boxShadow: 'inset 0px 2px 1px -1px rgba(255, 255, 255, 0.12), inset 0px 0px 0px 1px rgba(255, 255, 255, 0.05)',
+                                    transform: 'translateY(0)',
+                                    margin: '0',
+                                }}
+                                onMouseDown={() => !isLoading && { transform: 'translateY(1px)' }}
+                            >
+                                {isLoading ? (
+                                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{
+                        display: 'inline-block',
+                        width: '1rem',
+                        height: '1rem',
+                        borderRadius: '50%',
+                        borderTop: '2px solid white',
+                        borderRight: '2px solid transparent',
+                        marginRight: '0.5rem',
+                        animation: 'spin 1s linear infinite'
+                    }}></span>
+                    Logging in...
+                  </span>
+                                ) : 'Sign in'}
+                            </button>
+                        </form>
+
+                        <p style={{ textAlign: 'center', color: '#9C95AC', marginTop: '1.5rem', fontSize: '0.875rem' }}>
+                            Don't have an account? <Link to="/register" style={{ color: '#673CE3', textDecoration: 'none', fontWeight: '500' }}>Create account</Link>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        
+        input:focus {
+          outline: none;
+          border-color: #673CE3;
+        }
+        
+        input[type="checkbox"]:checked::after {
+          content: "";
+          display: block;
+          width: 0.375rem;
+          height: 0.625rem;
+          border: solid white;
+          border-width: 0 2px 2px 0;
+          transform: rotate(45deg);
+          position: relative;
+          top: 0.0625rem;
+          left: 0.25rem;
+        }
+      `}</style>
+        </div>
+    );
+};
+
+export default LoginPage;
+
+================
+File: src/pages/RegisterPage.jsx
+================
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { authService } from "../services/api.js";
+import { useAuth } from "../contexts/AuthContext";
+
+const RegisterPage = () => {
+    // Move the useAuth hook to the component level
+    const { setUser } = useAuth();
+    const navigate = useNavigate();
+
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: '',
+        personal: '',
+        github: '',
+        linkedin: ''
+    });
+
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError('');
+
+        try {
+            // Use the authService instead of direct fetch
+            const data = await authService.register(formData);
+
+            if (data.success) {
+                // Set user data directly from response
+                setUser({
+                    uuid: data.uuid,
+                    name: data.name,
+                    email: data.email
+                });
+                navigate('/');
+            } else {
+                setError(data.message || 'Registration failed');
+            }
+        } catch (error) {
+            console.error("Registration error:", error);
+            setError(error.message || 'An error occurred. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const inputStyle = {
+        width: '100%',
+        padding: '0.75rem 1rem',
+        backgroundColor: 'rgba(22, 21, 28, 0.5)',
+        border: '1px solid rgba(188, 156, 255, 0.1)',
+        borderRadius: '0.5rem',
+        color: 'white',
+        fontSize: '0.875rem',
+        boxSizing: 'border-box',
+        boxShadow: 'inset 0px 2px 1px -1px rgba(255, 255, 255, 0.12), inset 0px 0px 0px 1px rgba(255, 255, 255, 0.05)',
+        transition: 'border-color 0.2s',
+        margin: '0'
+    };
+
+    const labelStyle = {
+        display: 'block',
+        fontSize: '0.875rem',
+        fontWeight: '500',
+        color: '#9C95AC',
+        marginBottom: '0.5rem'
+    };
+
+    return (
+        <div style={{
+            width: '100%',
+            maxWidth: '100%',
+            padding: '3rem 1.5rem',
+            display: 'flex',
+            justifyContent: 'center'
+        }}>
+            <div style={{
+                width: '100%',
+                maxWidth: '32rem'
+            }}>
+                <div className="card" style={{
+                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                    overflow: 'hidden'
+                }}>
+                    <div className="card-header" style={{
+                        textAlign: 'center',
+                        padding: '2rem 1.5rem',
+                        borderBottom: '1px solid rgba(13, 12, 16, 1)'
+                    }}>
+                        <h2 style={{ fontSize: '1.75rem', fontWeight: 'bold', color: 'white', margin: 0 }}>Create Account</h2>
+                        <p style={{ color: '#9C95AC', marginTop: '0.5rem' }}>Join CodeNest to start sharing code snippets securely</p>
+                    </div>
+
+                    <div style={{
+                        padding: '2rem',
+                        borderTop: '1px solid rgba(188, 156, 255, 0.1)'
+                    }}>
+                        {error && (
+                            <div style={{ backgroundColor: 'rgba(220, 38, 38, 0.1)', color: '#ef4444', padding: '0.75rem', borderRadius: '0.5rem', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+                                {error}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleSubmit}>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label htmlFor="name" style={labelStyle}>
+                                    Name
+                                </label>
+                                <input
+                                    type="text"
+                                    id="name"
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    style={inputStyle}
+                                    required
+                                    placeholder="Your name"
+                                />
+                            </div>
+
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label htmlFor="email" style={labelStyle}>
+                                    Email
+                                </label>
+                                <input
+                                    type="email"
+                                    id="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    style={inputStyle}
+                                    required
+                                    placeholder="you@example.com"
+                                />
+                            </div>
+
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label htmlFor="password" style={labelStyle}>
+                                    Password
+                                </label>
+                                <input
+                                    type="password"
+                                    id="password"
+                                    name="password"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    style={inputStyle}
+                                    required
+                                    placeholder="••••••••"
+                                />
+                            </div>
+
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label htmlFor="personal" style={labelStyle}>
+                                    Personal Website <span style={{ color: '#9C95AC', opacity: 0.7 }}>(Optional)</span>
+                                </label>
+                                <input
+                                    type="url"
+                                    id="personal"
+                                    name="personal"
+                                    value={formData.personal}
+                                    onChange={handleChange}
+                                    style={inputStyle}
+                                    placeholder="https://yourwebsite.com"
+                                />
+                            </div>
+
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label htmlFor="github" style={labelStyle}>
+                                    GitHub Profile <span style={{ color: '#9C95AC', opacity: 0.7 }}>(Optional)</span>
+                                </label>
+                                <input
+                                    type="url"
+                                    id="github"
+                                    name="github"
+                                    value={formData.github}
+                                    onChange={handleChange}
+                                    style={inputStyle}
+                                    placeholder="https://github.com/username"
+                                />
+                            </div>
+
+                            <div style={{ marginBottom: '2rem' }}>
+                                <label htmlFor="linkedin" style={labelStyle}>
+                                    LinkedIn Profile <span style={{ color: '#9C95AC', opacity: 0.7 }}>(Optional)</span>
+                                </label>
+                                <input
+                                    type="url"
+                                    id="linkedin"
+                                    name="linkedin"
+                                    value={formData.linkedin}
+                                    onChange={handleChange}
+                                    style={inputStyle}
+                                    placeholder="https://linkedin.com/in/username"
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem',
+                                    backgroundColor: '#673CE3',
+                                    color: 'white',
+                                    fontWeight: '600',
+                                    borderRadius: '0.5rem',
+                                    border: 'none',
+                                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                                    opacity: isLoading ? 0.7 : 1,
+                                    transition: 'background-color 0.2s, transform 0.1s',
+                                    boxShadow: 'inset 0px 2px 1px -1px rgba(255, 255, 255, 0.12), inset 0px 0px 0px 1px rgba(255, 255, 255, 0.05)',
+                                    transform: 'translateY(0)',
+                                    margin: '0',
+                                }}
+                                onMouseDown={() => !isLoading && { transform: 'translateY(1px)' }}
+                            >
+                                {isLoading ? (
+                                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <span style={{
+                                            display: 'inline-block',
+                                            width: '1rem',
+                                            height: '1rem',
+                                            borderRadius: '50%',
+                                            borderTop: '2px solid white',
+                                            borderRight: '2px solid transparent',
+                                            marginRight: '0.5rem',
+                                            animation: 'spin 1s linear infinite'
+                                        }}></span>
+                                        Creating account...
+                                    </span>
+                                ) : 'Create account'}
+                            </button>
+                        </form>
+
+                        <p style={{ textAlign: 'center', color: '#9C95AC', marginTop: '1.5rem', fontSize: '0.875rem' }}>
+                            Already have an account? <Link to="/login" style={{ color: '#673CE3', textDecoration: 'none', fontWeight: '500' }}>Sign in</Link>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <style>{`
+                @keyframes spin {
+                  to { transform: rotate(360deg); }
+                }
+                
+                input:focus {
+                  outline: none;
+                  border-color: #673CE3;
+                }
+            `}</style>
+        </div>
+    );
+};
+
+export default RegisterPage;
+
+================
+File: src/pages/ViewSnippetPage.jsx
+================
+import React, { useState, useEffect } from 'react';
+import { useParams, useLocation, Link } from 'react-router-dom';
+import hljs from 'highlight.js';
+import 'highlight.js/styles/atom-one-dark.css';
+import { snippetService } from '../services/api';
+
+const ViewSnippetPage = () => {
+    const { uuid } = useParams();
+    const location = useLocation();
+    const [snippet, setSnippet] = useState(null);
+    const [author, setAuthor] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [copied, setCopied] = useState(false);
+    const [remainingTime, setRemainingTime] = useState(null);
+
+    useEffect(() => {
+        const fetchSnippet = async () => {
+            try {
+                // Only skip increment if explicitly passed in URL
+                // This will only happen when coming directly from snippet creation
+                const searchParams = new URLSearchParams(location.search);
+                const skipIncrement = searchParams.get('skipIncrement') === 'true';
+
+                // Clear the skipIncrement parameter from URL after first load
+                // so future refreshes will count as views
+                if (skipIncrement) {
+                    const newUrl = window.location.pathname;
+                    window.history.replaceState({}, '', newUrl);
+                }
+
+                const data = await snippetService.getById(uuid, skipIncrement);
+
+                if (data.snippet) {
+                    setSnippet(data.snippet);
+                    setAuthor(data.author);
+
+                    if (data.snippet.isRestrictedByTime && data.snippet.remainingSeconds > 0) {
+                        setRemainingTime(data.snippet.remainingSeconds);
+                    }
+                } else {
+                    throw new Error('Invalid response format');
+                }
+            } catch (err) {
+                setError(err.message || 'Snippet not found or has expired');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchSnippet();
+    }, [uuid, location.search]);
+
+    // Set up countdown timer if needed
+    useEffect(() => {
+        if (remainingTime && remainingTime > 0) {
+            const timer = setInterval(() => {
+                setRemainingTime(prev => {
+                    if (prev <= 1) {
+                        clearInterval(timer);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+
+            return () => clearInterval(timer);
+        }
+    }, [remainingTime]);
+
+    // Apply syntax highlighting
+    useEffect(() => {
+        if (snippet && !loading) {
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+        }
+    }, [snippet, loading]);
+
+    const formatTime = (seconds) => {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+
+        return [
+            hours.toString().padStart(2, '0'),
+            minutes.toString().padStart(2, '0'),
+            secs.toString().padStart(2, '0')
+        ].join(':');
+    };
+
+    const handleCopyCode = () => {
+        if (snippet) {
+            navigator.clipboard.writeText(snippet.code);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div style={{ textAlign: 'center', padding: '5rem 0' }}>
+                <div style={{ display: 'inline-block', width: '2rem', height: '2rem', borderRadius: '50%', borderTop: '3px solid #673CE3', borderRight: '3px solid transparent', animation: 'spin 1s linear infinite' }}>
+                    <style>
+                        {`
+              @keyframes spin {
+                to { transform: rotate(360deg); }
+              }
+            `}
+                    </style>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="container" style={{ padding: '3rem 1.5rem' }}>
+                <div style={{ maxWidth: '48rem', margin: '0 auto' }}>
+                    <div className="card" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white', marginBottom: '1rem' }}>
+                            Snippet Not Found
+                        </h2>
+                        <p style={{ color: '#9C95AC', marginBottom: '1.5rem' }}>
+                            {error}
+                        </p>
+                        <Link to="/" className="btn-primary">
+                            Return Home
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="container" style={{ padding: '3rem 1.5rem' }}>
+            {snippet && (
+                <div style={{ maxWidth: '64rem', margin: '0 auto' }}>
+                    <div className="card" style={{ marginBottom: '1.5rem' }}>
+                        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white', margin: 0 }}>
+                                Code Snippet
+                            </h2>
+                            <div style={{ display: 'flex', gap: '1rem', color: '#9C95AC', fontSize: '0.875rem' }}>
+                                <span>Created: {snippet.date}</span>
+
+                                {snippet.isRestrictedByTime && (
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    {remainingTime > 0 ? (
+                        <>
+                            <span style={{ display: 'inline-block', width: '0.5rem', height: '0.5rem', backgroundColor: '#673CE3', borderRadius: '50%', animation: 'pulse 2s infinite' }}></span>
+                            <style>
+                                {`
+                            @keyframes pulse {
+                              0% { opacity: 0.3; }
+                              50% { opacity: 1; }
+                              100% { opacity: 0.3; }
+                            }
+                          `}
+                            </style>
+                            Expires in: {formatTime(remainingTime)}
+                        </>
+                    ) : (
+                        `Expired: ${snippet.expiryDate}`
+                    )}
+                  </span>
+                                )}
+
+                                {snippet.viewLimit > 0 && (
+                                    <span>
+                    Views: {snippet.viewCount}/{snippet.viewLimit}
+                  </span>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="card-body">
+              <pre style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)', padding: '1.5rem', borderRadius: '0.5rem', overflow: 'auto', margin: '0 0 1rem' }}>
+                <code>{snippet.code}</code>
+              </pre>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <button
+                                    onClick={handleCopyCode}
+                                    className="btn-secondary"
+                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        {copied ? (
+                                            <path d="M20 6L9 17l-5-5" />
+                                        ) : (
+                                            <>
+                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                                            </>
+                                        )}
+                                    </svg>
+                                    {copied ? 'Copied!' : 'Copy Code'}
+                                </button>
+
+                                <div>
+                                    <input
+                                        type="text"
+                                        value={`${window.location.origin}/code/${snippet.uuid}`}
+                                        readOnly
+                                        style={{
+                                            backgroundColor: 'rgba(0, 0, 0, 0.25)',
+                                            border: 'none',
+                                            borderRadius: '0.5rem',
+                                            color: '#9C95AC',
+                                            padding: '0.5rem 1rem',
+                                            fontSize: '0.875rem',
+                                            width: '280px'
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {author && author.name !== 'Unknown' && (
+                        <div className="card">
+                            <div className="card-header">
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', margin: 0 }}>
+                                    About the Author
+                                </h3>
+                                <span style={{ color: '#673CE3' }}>{author.name}</span>
+                            </div>
+
+                            <div className="card-body">
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                    {author.personal && (
+                                        <a
+                                            href={author.personal}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="btn-secondary"
+                                        >
+                                            Personal Website
+                                        </a>
+                                    )}
+
+                                    {author.github && (
+                                        <a
+                                            href={author.github}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="btn-secondary"
+                                        >
+                                            GitHub
+                                        </a>
+                                    )}
+
+                                    {author.linkedin && (
+                                        <a
+                                            href={author.linkedin}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="btn-secondary"
+                                        >
+                                            LinkedIn
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default ViewSnippetPage;
+
+================
+File: src/services/api.js
+================
+// Base API handling
+const API_URL = '/api';
+
+// Helper for handling API responses
+const handleResponse = async (response) => {
+    if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+
+        try {
+            const errorJson = JSON.parse(errorText);
+            throw new Error(errorJson.message || 'API request failed');
+        } catch (e) {
+            throw new Error(errorText || 'API request failed');
+        }
+    }
+
+    return response.json();
+};
+
+// Snippet operations
+export const snippetService = {
+    getLatest: async () => {
+        const response = await fetch(`${API_URL}/code/latest`);
+        return handleResponse(response);
+    },
+
+    getById: async (uuid, skipIncrement = false) => {
+        // Add a query parameter to skip incrementing the view count if needed
+        const url = skipIncrement
+            ? `${API_URL}/code/${uuid}?skipIncrement=true`
+            : `${API_URL}/code/${uuid}`;
+
+        const response = await fetch(url, {
+            credentials: 'include'
+        });
+
+        return handleResponse(response);
+    },
+
+    create: async (snippetData) => {
+        const response = await fetch(`${API_URL}/code/new`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                ...snippetData,
+                timeLimit: Number(snippetData.timeLimit) || 0,
+                viewLimit: Number(snippetData.viewLimit) || 0
+            }),
+            credentials: 'include'
+        });
+
+        return handleResponse(response);
+    }
+};
+
+// Authentication operations
+export const authService = {
+    login: async (credentials) => {
+        const response = await fetch(`${API_URL}/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(credentials),
+            credentials: 'include'
+        });
+
+        return handleResponse(response);
+    },
+
+    register: async (userData) => {
+        const response = await fetch(`${API_URL}/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(userData),
+            credentials: 'include'
+        });
+
+        return handleResponse(response);
+    },
+
+    logout: async () => {
+        const response = await fetch(`${API_URL}/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            return false;
+        }
+
+        return true;
+    },
+
+    getCurrentUser: async () => {
+        const response = await fetch(`${API_URL}/auth/me`, {
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            return null;
+        }
+
+        return response.json();
+    }
+};
+
+================
+File: src/vite-env.d.ts
+================
+/// <reference types="vite/client" />
+
+================
+File: tailwind.config.js
+================
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      fontFamily: {
+        clash: ["ClashDisplay", "sans-serif"],
+        geist: ["Geist", "sans-serif"],
+        mono: ["GeistMono", "monospace"],
+      },
+      colors: {
+        orchid: "#673CE3",
+        "orchid-100": "#774BF3",
+        primary: "#9C95AC",
+        grey: "#30303A",
+        "grey-100": "#373743",
+        dark: "#16151C",
+        background: "#0D0D11",
+      },
+    },
+  },
+  plugins: [],
+}
+
+================
+File: tsconfig.app.json
+================
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["src"]
+}
+
+================
+File: tsconfig.json
+================
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}
+
+================
+File: tsconfig.node.json
+================
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["vite.config.ts"]
+}
+
+================
+File: vite.config.ts
+================
+// vite.config.js
+export default {
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true
+      }
+    }
+  }
+}
+
+
+
+================================================================
+End of Codebase
+================================================================

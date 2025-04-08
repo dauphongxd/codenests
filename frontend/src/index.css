@@ -1,0 +1,143 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+body {
+  background-color: #0D0D11;
+  color: white;
+  font-family: system-ui, -apple-system, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Grain effect */
+.grain {
+  position: relative;
+}
+
+.grain::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("./grain.png");
+  background-size: cover;
+  opacity: 0.05;
+  z-index: -1;
+}
+
+/* Purple glows */
+.purple-glow {
+  position: absolute;
+  width: 40rem;
+  height: 10rem;
+  border-radius: 50%;
+  filter: blur(100px);
+  z-index: -1;
+  background-color: rgba(111, 50, 240, 0.25);
+  left: 50%;
+  transform: translateX(-50%);
+  top: -48px;
+}
+
+.purple-glow-bottom {
+  position: absolute;
+  width: 40rem;
+  height: 10rem;
+  border-radius: 50%;
+  filter: blur(200px);
+  z-index: -1;
+  background-color: rgba(111, 50, 240, 1);
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -24rem;
+}
+
+/* Component styles */
+.card {
+  background-color: #16151C;
+  border: 1px solid rgba(188, 156, 255, 0.1);
+  border-radius: 1.5rem;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.card-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(13, 12, 16, 1);
+}
+
+.card-body {
+  padding: 1.5rem;
+  border-top: 1px solid rgba(188, 156, 255, 0.1);
+}
+
+.btn-primary {
+  background-color: #673CE3;
+  color: white;
+  font-weight: 600;
+  padding: 0.625rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+  display: inline-block;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: inset 0px 2px 1px -1px rgba(255, 255, 255, 0.12), inset 0px 0px 0px 1px rgba(255, 255, 255, 0.05);
+}
+
+.btn-primary:hover {
+  background-color: #774BF3;
+}
+
+.btn-secondary {
+  background-color: #2D2A3D;
+  border: 1px solid rgba(188, 156, 255, 0.1);
+  color: #9C95AC;
+  padding: 0.625rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  cursor: pointer;
+  display: inline-block;
+  text-align: center;
+  text-decoration: none;
+}
+
+.btn-secondary:hover {
+  color: white;
+}
+
+.input-field {
+  width: 100%;
+  background-color: rgba(22, 21, 28, 0.5);
+  border: 1px solid rgba(188, 156, 255, 0.1);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  color: white;
+  font-size: 0.875rem;
+  box-shadow: inset 0px 2px 1px -1px rgba(255, 255, 255, 0.12), inset 0px 0px 0px 1px rgba(255, 255, 255, 0.05);
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: #673CE3;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.text-primary {
+  color: #9C95AC;
+}
+
+.text-purple {
+  color: #673CE3;
+}
