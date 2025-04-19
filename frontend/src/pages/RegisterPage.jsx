@@ -2,14 +2,28 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from "../services/api.js";
 import { useAuth } from "../contexts/AuthContext";
+import {
+    Container,
+    Paper,
+    Box,
+    Typography,
+    TextField,
+    Button,
+    CircularProgress,
+    Alert,
+    Stack, // Use Stack for layout
+    Link as MuiLink, // For the login link
+    useTheme
+} from '@mui/material';
+import { PersonAdd as PersonAddIcon } from '@mui/icons-material'; // Optional icon
 
 const RegisterPage = () => {
-    // Move the useAuth hook to the component level
     const { setUser } = useAuth();
     const navigate = useNavigate();
+    const theme = useTheme();
 
     const [formData, setFormData] = useState({
-        name: '',
+        username: '', // Changed from 'name' to 'username' to match backend User model
         email: '',
         password: '',
         personal: '',
@@ -19,6 +33,23 @@ const RegisterPage = () => {
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+
+    // Consistent card styles (same as LoginPage)
+    const cardStyle = {
+        borderRadius: 3,
+        bgcolor: theme.palette.mode === 'dark' ? '#16151C' : 'background.paper',
+        border: '1px solid',
+        borderColor: theme.palette.mode === 'dark' ? 'rgba(188, 156, 255, 0.1)' : 'divider',
+        overflow: 'hidden',
+        maxWidth: 500, // Slightly wider for more fields
+        mx: 'auto',
+    };
+    const cardHeaderStyle = {
+        p: 3,
+        borderBottom: '1px solid',
+        borderColor: theme.palette.mode === 'dark' ? 'rgba(13, 12, 16, 1)' : 'divider',
+        textAlign: 'center',
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -30,236 +61,158 @@ const RegisterPage = () => {
         setIsLoading(true);
         setError('');
 
+        // --- Ensure 'username' is sent, not 'name' ---
+        const payload = {
+            username: formData.username, // Use username
+            email: formData.email,
+            password: formData.password,
+            personal: formData.personal,
+            github: formData.github,
+            linkedin: formData.linkedin,
+        };
+        // ---
+
         try {
-            // Use the authService instead of direct fetch
-            const data = await authService.register(formData);
+            const data = await authService.register(payload); // Send payload with 'username'
 
             if (data.success) {
-                // Set user data directly from response
+                // Set user context after successful registration
                 setUser({
                     uuid: data.uuid,
-                    name: data.name,
-                    email: data.email
+                    username: data.username, // Use username from response
+                    email: data.email,
+                    // Include other fields if backend sends them back
                 });
-                navigate('/');
+                navigate('/dashboard'); // Redirect to dashboard
             } else {
-                setError(data.message || 'Registration failed');
+                setError(data.message || 'Registration failed. Please check your input.');
             }
-        } catch (error) {
-            console.error("Registration error:", error);
-            setError(error.message || 'An error occurred. Please try again.');
+        } catch (err) {
+            setError(err.message || 'An error occurred. Please try again.');
         } finally {
             setIsLoading(false);
         }
     };
 
-    const inputStyle = {
-        width: '100%',
-        padding: '0.75rem 1rem',
-        backgroundColor: 'rgba(22, 21, 28, 0.5)',
-        border: '1px solid rgba(188, 156, 255, 0.1)',
-        borderRadius: '0.5rem',
-        color: 'white',
-        fontSize: '0.875rem',
-        boxSizing: 'border-box',
-        boxShadow: 'inset 0px 2px 1px -1px rgba(255, 255, 255, 0.12), inset 0px 0px 0px 1px rgba(255, 255, 255, 0.05)',
-        transition: 'border-color 0.2s',
-        margin: '0'
-    };
-
-    const labelStyle = {
-        display: 'block',
-        fontSize: '0.875rem',
-        fontWeight: '500',
-        color: '#9C95AC',
-        marginBottom: '0.5rem'
-    };
-
     return (
-        <div style={{
-            width: '100%',
-            maxWidth: '100%',
-            padding: '3rem 1.5rem',
-            display: 'flex',
-            justifyContent: 'center'
-        }}>
-            <div style={{
-                width: '100%',
-                maxWidth: '32rem'
-            }}>
-                <div className="card" style={{
-                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                    overflow: 'hidden'
-                }}>
-                    <div className="card-header" style={{
-                        textAlign: 'center',
-                        padding: '2rem 1.5rem',
-                        borderBottom: '1px solid rgba(13, 12, 16, 1)'
-                    }}>
-                        <h2 style={{ fontSize: '1.75rem', fontWeight: 'bold', color: 'white', margin: 0 }}>Create Account</h2>
-                        <p style={{ color: '#9C95AC', marginTop: '0.5rem' }}>Join CodeNest to start sharing code snippets securely</p>
-                    </div>
+        <Container maxWidth="sm" sx={{ py: { xs: 4, md: 8 }, zIndex: 5, position: 'relative' }}>
+            <Paper elevation={0} sx={cardStyle}>
+                <Box sx={cardHeaderStyle}>
+                    <Typography variant="h5" component="h1" fontWeight="bold" gutterBottom>
+                        Create Account
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        Join CodeNest to start sharing code securely.
+                    </Typography>
+                </Box>
 
-                    <div style={{
-                        padding: '2rem',
-                        borderTop: '1px solid rgba(188, 156, 255, 0.1)'
-                    }}>
-                        {error && (
-                            <div style={{ backgroundColor: 'rgba(220, 38, 38, 0.1)', color: '#ef4444', padding: '0.75rem', borderRadius: '0.5rem', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-                                {error}
-                            </div>
-                        )}
+                <Box p={3}>
+                    {error && (
+                        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
+                            {error}
+                        </Alert>
+                    )}
 
-                        <form onSubmit={handleSubmit}>
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label htmlFor="name" style={labelStyle}>
-                                    Name
-                                </label>
-                                <input
-                                    type="text"
-                                    id="name"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    style={inputStyle}
-                                    required
-                                    placeholder="Your name"
-                                />
-                            </div>
-
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label htmlFor="email" style={labelStyle}>
-                                    Email
-                                </label>
-                                <input
-                                    type="email"
-                                    id="email"
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    style={inputStyle}
-                                    required
-                                    placeholder="you@example.com"
-                                />
-                            </div>
-
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label htmlFor="password" style={labelStyle}>
-                                    Password
-                                </label>
-                                <input
-                                    type="password"
-                                    id="password"
-                                    name="password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    style={inputStyle}
-                                    required
-                                    placeholder="••••••••"
-                                />
-                            </div>
-
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label htmlFor="personal" style={labelStyle}>
-                                    Personal Website <span style={{ color: '#9C95AC', opacity: 0.7 }}>(Optional)</span>
-                                </label>
-                                <input
-                                    type="url"
-                                    id="personal"
-                                    name="personal"
-                                    value={formData.personal}
-                                    onChange={handleChange}
-                                    style={inputStyle}
-                                    placeholder="https://yourwebsite.com"
-                                />
-                            </div>
-
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label htmlFor="github" style={labelStyle}>
-                                    GitHub Profile <span style={{ color: '#9C95AC', opacity: 0.7 }}>(Optional)</span>
-                                </label>
-                                <input
-                                    type="url"
-                                    id="github"
-                                    name="github"
-                                    value={formData.github}
-                                    onChange={handleChange}
-                                    style={inputStyle}
-                                    placeholder="https://github.com/username"
-                                />
-                            </div>
-
-                            <div style={{ marginBottom: '2rem' }}>
-                                <label htmlFor="linkedin" style={labelStyle}>
-                                    LinkedIn Profile <span style={{ color: '#9C95AC', opacity: 0.7 }}>(Optional)</span>
-                                </label>
-                                <input
-                                    type="url"
-                                    id="linkedin"
-                                    name="linkedin"
-                                    value={formData.linkedin}
-                                    onChange={handleChange}
-                                    style={inputStyle}
-                                    placeholder="https://linkedin.com/in/username"
-                                />
-                            </div>
-
-                            <button
-                                type="submit"
+                    <Box component="form" onSubmit={handleSubmit} noValidate>
+                        <Stack spacing={3}> {/* Use Stack for vertical spacing */}
+                            <TextField
+                                label="Username"
+                                name="username" // Ensure name matches state key
+                                fullWidth
+                                required
+                                variant="outlined"
+                                value={formData.username}
+                                onChange={handleChange}
                                 disabled={isLoading}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.75rem',
-                                    backgroundColor: '#673CE3',
-                                    color: 'white',
-                                    fontWeight: '600',
-                                    borderRadius: '0.5rem',
-                                    border: 'none',
-                                    cursor: isLoading ? 'not-allowed' : 'pointer',
-                                    opacity: isLoading ? 0.7 : 1,
-                                    transition: 'background-color 0.2s, transform 0.1s',
-                                    boxShadow: 'inset 0px 2px 1px -1px rgba(255, 255, 255, 0.12), inset 0px 0px 0px 1px rgba(255, 255, 255, 0.05)',
-                                    transform: 'translateY(0)',
-                                    margin: '0',
-                                }}
-                                onMouseDown={() => !isLoading && { transform: 'translateY(1px)' }}
+                                placeholder="Choose a username"
+                            />
+                            <TextField
+                                label="Email"
+                                name="email"
+                                type="email"
+                                fullWidth
+                                required
+                                variant="outlined"
+                                value={formData.email}
+                                onChange={handleChange}
+                                disabled={isLoading}
+                                placeholder="you@example.com"
+                            />
+                            <TextField
+                                label="Password"
+                                name="password"
+                                type="password"
+                                fullWidth
+                                required
+                                variant="outlined"
+                                value={formData.password}
+                                onChange={handleChange}
+                                disabled={isLoading}
+                                placeholder="Create a secure password"
+                            />
+
+                            <TextField
+                                label="Personal Website (Optional)"
+                                name="personal"
+                                type="url"
+                                fullWidth
+                                variant="outlined"
+                                value={formData.personal}
+                                onChange={handleChange}
+                                disabled={isLoading}
+                                placeholder="https://yourwebsite.com"
+                            />
+                            <TextField
+                                label="GitHub Profile (Optional)"
+                                name="github"
+                                type="url"
+                                fullWidth
+                                variant="outlined"
+                                value={formData.github}
+                                onChange={handleChange}
+                                disabled={isLoading}
+                                placeholder="https://github.com/yourusername"
+                            />
+                            <TextField
+                                label="LinkedIn Profile (Optional)"
+                                name="linkedin"
+                                type="url"
+                                fullWidth
+                                variant="outlined"
+                                value={formData.linkedin}
+                                onChange={handleChange}
+                                disabled={isLoading}
+                                placeholder="https://linkedin.com/in/yourusername"
+                            />
+
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                color="primary"
+                                fullWidth
+                                disabled={isLoading}
+                                size="large"
+                                startIcon={isLoading ? null : <PersonAddIcon />}
+                                sx={{ py: 1.5 }} // Make button slightly larger
                             >
                                 {isLoading ? (
-                                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <span style={{
-                                            display: 'inline-block',
-                                            width: '1rem',
-                                            height: '1rem',
-                                            borderRadius: '50%',
-                                            borderTop: '2px solid white',
-                                            borderRight: '2px solid transparent',
-                                            marginRight: '0.5rem',
-                                            animation: 'spin 1s linear infinite'
-                                        }}></span>
-                                        Creating account...
-                                    </span>
-                                ) : 'Create account'}
-                            </button>
-                        </form>
+                                    <CircularProgress size={24} color="inherit" />
+                                ) : (
+                                    'Create Account'
+                                )}
+                            </Button>
 
-                        <p style={{ textAlign: 'center', color: '#9C95AC', marginTop: '1.5rem', fontSize: '0.875rem' }}>
-                            Already have an account? <Link to="/login" style={{ color: '#673CE3', textDecoration: 'none', fontWeight: '500' }}>Sign in</Link>
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <style>{`
-                @keyframes spin {
-                  to { transform: rotate(360deg); }
-                }
-                
-                input:focus {
-                  outline: none;
-                  border-color: #673CE3;
-                }
-            `}</style>
-        </div>
+                            <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
+                                Already have an account?{' '}
+                                <MuiLink component={Link} to="/login" fontWeight="medium" color="primary.main">
+                                    Sign In
+                                </MuiLink>
+                            </Typography>
+                        </Stack>
+                    </Box>
+                </Box>
+            </Paper>
+        </Container>
     );
 };
 

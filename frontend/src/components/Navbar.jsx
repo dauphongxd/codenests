@@ -52,9 +52,50 @@ const Navbar = () => {
                             >
                                 New Snippet
                             </Link>
-                            <div style={{ color: '#9C95AC', fontSize: '0.875rem' }}>
-                                Welcome, <span style={{ color: '#673CE3' }}>{currentUser?.name}</span>
-                            </div>
+
+                            {isAuthenticated && (
+                                <Link
+                                    to="/groups"
+                                    style={{
+                                        fontSize: '0.875rem',
+                                        fontWeight: '500',
+                                        color: isActive('/groups') ? '#673CE3' : '#9C95AC',
+                                        textDecoration: 'none',
+                                        transition: 'color 0.2s'
+                                    }}
+                                >
+                                    Groups
+                                </Link>
+                            )}
+                            {isAuthenticated && (
+                                <Link
+                                    to="/messages"
+                                    style={{
+                                        fontSize: '0.875rem',
+                                        fontWeight: '500',
+                                        color: isActive('/messages') ? '#673CE3' : '#9C95AC',
+                                        textDecoration: 'none',
+                                        transition: 'color 0.2s'
+                                    }}
+                                >
+                                    Messages
+                                </Link>
+                            )}
+
+                            {isAuthenticated && (
+                                <Link
+                                    to="/dashboard"
+                                    style={{
+                                        fontSize: '0.875rem',
+                                        fontWeight: '500',
+                                        color: isActive('/dashboard') ? '#673CE3' : '#9C95AC',
+                                        textDecoration: 'none',
+                                        transition: 'color 0.2s'
+                                    }}
+                                >
+                                    Dashboard
+                                </Link>
+                            )}
                             <button
                                 onClick={handleLogout}
                                 style={{

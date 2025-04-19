@@ -1,7 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
 
 const HomePage = () => {
+    const { isAuthenticated } = useAuth();
+    // Redirect authenticated users to dashboard
+    if (isAuthenticated) {
+        return <Navigate to="/dashboard" />;
+    }
     return (
         <div className="container" style={{ padding: '3rem 1.5rem' }}>
             <div style={{ maxWidth: '64rem', margin: '0 auto' }}>

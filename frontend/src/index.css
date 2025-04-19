@@ -141,3 +141,36 @@ body {
 .text-purple {
   color: #673CE3;
 }
+
+.form-radio {
+  appearance: none;
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  border: 1px solid #9C95AC; /* primary color */
+  vertical-align: middle;
+  margin-right: 0.5em; /* Adjust as needed */
+  position: relative;
+  cursor: pointer;
+}
+.form-radio:checked {
+  border-color: #673CE3; /* orchid color */
+  background-color: #673CE3;
+}
+.form-radio:checked::after {
+  content: '';
+  display: block;
+  width: 0.4em;
+  height: 0.4em;
+  border-radius: 50%;
+  background-color: white;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.form-radio:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(103, 60, 227, 0.5); /* Optional focus ring */
+}

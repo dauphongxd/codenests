@@ -1,47 +1,54 @@
 package com.code.codenest.model;
 
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
 import java.util.UUID;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Transient;
 
 @Entity
+@Table(name = "users")
 @JsonIgnoreProperties({"id"})
-public class Author {
-
+public class User {
     @Transient
-    public static final Author UNKNOWN = new Author("00000000-0000-0000-0000-000000000000", "Unknown");
+    public static final User UNKNOWN = new User("00000000-0000-0000-0000-000000000000", "Unknown");
     static {
-        UNKNOWN.name = "Unknown";
+        UNKNOWN.username = "Unknown";
     }
 
-    @Id @GeneratedValue private long id = 0L;
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     private String uuid = UUID.randomUUID().toString();
-    private String name = "";
-    private String email = "";
-    private String passwordHash = "";
-    private String personal = "";
-    private String github = "";
-    private String linkedin = "";
 
-    public Author(String uuid, String name) {
+    @Column(unique = true)
+    private String username;
+
+    @Column(unique = true)
+    private String email;
+
+    private String passwordHash;
+
+    private String personal;
+    private String github;
+    private String linkedin;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    public User() {
+    }
+
+    public User(String uuid, String username) {
         this.uuid = uuid;
-        this.name = name;
+        this.username = username;
     }
 
-    public Author() {
-
-    }
-
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -49,12 +56,12 @@ public class Author {
         return uuid;
     }
 
-    public String getName() {
-        return name;
+    public String getUsername() {
+        return username;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getEmail() {
@@ -65,6 +72,11 @@ public class Author {
         this.email = email;
     }
 
+    @JsonIgnore
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
     public boolean checkPassword(String password) {
         return getHexStringFromByteArray(getPasswordHashArray(password)).equals(passwordHash);
     }
@@ -73,9 +85,14 @@ public class Author {
         this.passwordHash = getHexStringFromByteArray(getPasswordHashArray(password));
     }
 
-    // An ugly fix to prepend there is a password field.
-    public String getPassword() {
-        return "";
+    // For backward compatibility
+    public String getName() {
+        return username;
+    }
+
+    // For backward compatibility
+    public void setName(String name) {
+        this.username = name;
     }
 
     public String getPersonal() {
@@ -102,18 +119,20 @@ public class Author {
         this.linkedin = linkedin;
     }
 
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        com.code.codenest.model.Author author = (com.code.codenest.model.Author) o;
-
-        return uuid.equals(author.uuid);
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return uuid.equals(user.uuid);
     }
 
     @Override

@@ -1,0 +1,152 @@
+-- Create users table
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    uuid VARCHAR(255) UNIQUE NOT NULL,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    personal VARCHAR(255),
+    github VARCHAR(255),
+    linkedin VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create snips table
+CREATE TABLE snips (
+    id BIGSERIAL PRIMARY KEY,
+    uuid VARCHAR(255) UNIQUE NOT NULL,
+    user_id BIGINT NOT NULL,
+    title VARCHAR(255),
+    content TEXT NOT NULL,
+    expiration_type VARCHAR(20),
+    expiration_value BIGINT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    view_count BIGINT DEFAULT 0,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Create messages table
+CREATE TABLE messages (
+    id BIGSERIAL PRIMARY KEY,
+    sender_id BIGINT NOT NULL,
+    receiver_id BIGINT NOT NULL,
+    snip_id BIGINT,
+    content TEXT NOT NULL,
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (sender_id) REFERENCES users(id),
+    FOREIGN KEY (receiver_id) REFERENCES users(id),
+    FOREIGN KEY (snip_id) REFERENCES snips(id)
+);
+
+-- Create view_logs table
+CREATE TABLE view_logs (
+    id BIGSERIAL PRIMARY KEY,
+    snip_id BIGINT NOT NULL,
+    viewer_id BIGINT,
+    viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (snip_id) REFERENCES snips(id),
+    FOREIGN KEY (viewer_id) REFERENCES users(id)
+);
+
+-- Create expiration_logs table
+CREATE TABLE expiration_logs (
+    id BIGSERIAL PRIMARY KEY,
+    snip_id BIGINT NOT NULL,
+    expired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expiration_reason VARCHAR(20) NOT NULL,
+    FOREIGN KEY (snip_id) REFERENCES snips(id)
+);
+
+-- Create tags table
+CREATE TABLE tags (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) UNIQUE NOT NULL
+);
+
+-- Create snip_tags table
+CREATE TABLE snip_tags (
+    id BIGSERIAL PRIMARY KEY,
+    snip_id BIGINT NOT NULL,
+    tag_id BIGINT NOT NULL,
+    FOREIGN KEY (snip_id) REFERENCES snips(id),
+    FOREIGN KEY (tag_id) REFERENCES tags(id),
+    UNIQUE (snip_id, tag_id)
+);
+
+-- Create groups table
+CREATE TABLE groups (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    creator_id BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (creator_id) REFERENCES users(id)
+);
+
+-- Create group_members table
+CREATE TABLE group_members (
+    id BIGSERIAL PRIMARY KEY,
+    group_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (group_id) REFERENCES groups(id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    UNIQUE (group_id, user_id)
+);
+
+CREATE TABLE group_snips (
+    id BIGSERIAL PRIMARY KEY,
+    group_id BIGINT NOT NULL,
+    snip_id BIGINT NOT NULL,
+    shared_by_id BIGINT NOT NULL,
+    shared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (group_id) REFERENCES groups(id),
+    FOREIGN KEY (snip_id) REFERENCES snips(id),
+    FOREIGN KEY (shared_by_id) REFERENCES users(id),
+    UNIQUE (group_id, snip_id) -- Prevent the same snippet from being shared twice with the same group
+);
+
+-- Create indexes for common queries
+CREATE INDEX idx_snips_user_id ON snips(user_id);
+CREATE INDEX idx_snips_created_at ON snips(created_at);
+CREATE INDEX idx_messages_sender_id ON messages(sender_id);
+CREATE INDEX idx_messages_receiver_id ON messages(receiver_id);
+CREATE INDEX idx_view_logs_snip_id ON view_logs(snip_id);
+CREATE INDEX idx_view_logs_viewer_id ON view_logs(viewer_id);
+CREATE INDEX idx_group_members_group_id ON group_members(group_id);
+CREATE INDEX idx_group_members_user_id ON group_members(user_id);
+CREATE INDEX idx_group_snips_group_id ON group_snips(group_id);
+CREATE INDEX idx_group_snips_snip_id ON group_snips(snip_id);
+CREATE INDEX idx_group_snips_shared_by ON group_snips(shared_by_id);
+
+-- Migration data script (if you have existing data)
+-- NOTE: Modify this based on your existing table names if they're different
+
+-- Migrate data from authors to users
+-- INSERT INTO users (uuid, username, email, password_hash, personal, github, linkedin, created_at)
+-- SELECT uuid, name, email, password_hash, personal, github, linkedin, CURRENT_TIMESTAMP
+-- FROM author;
+
+-- Migrate data from code_snippets to snips
+-- INSERT INTO snips (uuid, user_id, content, created_at, view_count, is_deleted)
+-- SELECT cs.uuid, u.id, cs.code, cs.date, cs.view_count, FALSE
+-- FROM code_snippet cs
+-- JOIN users u ON cs.author_uuid = u.uuid;
+
+-- Update expiration fields in snips
+-- UPDATE snips s
+-- SET 
+--     expiration_type = CASE 
+--                         WHEN EXISTS (SELECT 1 FROM code_snippet cs WHERE cs.uuid = s.uuid AND cs.time_limit > 0) 
+--                           THEN 'TIME' 
+--                         WHEN EXISTS (SELECT 1 FROM code_snippet cs WHERE cs.uuid = s.uuid AND cs.view_limit > 0) 
+--                           THEN 'VIEWS' 
+--                         ELSE NULL 
+--                       END,
+--     expiration_value = CASE 
+--                         WHEN EXISTS (SELECT 1 FROM code_snippet cs WHERE cs.uuid = s.uuid AND cs.time_limit > 0) 
+--                           THEN (SELECT cs.time_limit FROM code_snippet cs WHERE cs.uuid = s.uuid) 
+--                         WHEN EXISTS (SELECT 1 FROM code_snippet cs WHERE cs.uuid = s.uuid AND cs.view_limit > 0) 
+--                           THEN (SELECT cs.view_limit FROM code_snippet cs WHERE cs.uuid = s.uuid) 
+--                         ELSE 0 
+--                       END;

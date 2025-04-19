@@ -1,0 +1,2957 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+================================================================
+File Summary
+================================================================
+
+Purpose:
+--------
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+
+File Format:
+------------
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Multiple file entries, each consisting of:
+  a. A separator line (================)
+  b. The file path (File: path/to/file)
+  c. Another separator line
+  d. The full contents of the file
+  e. A blank line
+
+Usage Guidelines:
+-----------------
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+
+Notes:
+------
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+
+Additional Info:
+----------------
+
+================================================================
+Directory Structure
+================================================================
+CodenestApplication.java
+config/CookieAuthenticationFilter.java
+config/SecurityConfig.java
+config/WebConfig.java
+controller/ApiController.java
+controller/ErrorHandlingController.java
+controller/GroupController.java
+controller/MessageController.java
+dto/GroupCreateRequest.java
+dto/MessageCreateRequest.java
+dto/SnipCreateRequest.java
+dto/SnipResponse.java
+dto/UserResponse.java
+dto/UserUpdateRequest.java
+exception/SnippetExpiredException.java
+exception/SnippetNotFoundException.java
+model/BaseCredentials.java
+model/ExpirationLog.java
+model/Group.java
+model/GroupMember.java
+model/GroupSnip.java
+model/Message.java
+model/Snip.java
+model/SnipTag.java
+model/Tag.java
+model/User.java
+model/ViewLog.java
+repository/ExpirationLogRepository.java
+repository/GroupMemberRepository.java
+repository/GroupRepository.java
+repository/GroupSnipRepository.java
+repository/MessageRepository.java
+repository/SnipRepository.java
+repository/SnipTagRepository.java
+repository/TagRepository.java
+repository/UserRepository.java
+repository/ViewLogRepository.java
+
+================================================================
+Files
+================================================================
+
+================
+File: CodenestApplication.java
+================
+package com.code.codenest;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class CodenestApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(CodenestApplication.class, args);
+	}
+
+}
+
+================
+File: config/CookieAuthenticationFilter.java
+================
+package com.code.codenest.config;
+
+import com.code.codenest.model.User;
+import com.code.codenest.repository.UserRepository;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Optional;
+
+@Component // Make it a Spring bean
+public class CookieAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(CookieAuthenticationFilter.class);
+    private final UserRepository userRepository;
+
+    @Autowired
+    public CookieAuthenticationFilter(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+
+        Optional<String> uuidCookie = extractUuidCookie(request);
+
+        if (uuidCookie.isPresent() && SecurityContextHolder.getContext().getAuthentication() == null) {
+            String uuid = uuidCookie.get();
+            log.trace("Found uuid cookie: {}", uuid); // Use trace for potentially sensitive info
+
+            Optional<User> userOptional = userRepository.findByUuid(uuid);
+
+            if (userOptional.isPresent()) {
+                User user = userOptional.get();
+                log.debug("Authenticating user '{}' via uuid cookie", user.getUsername());
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        user,
+                        null,
+                        null
+                );
+
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+                log.debug("User '{}' authenticated successfully via cookie.", user.getUsername());
+            } else {
+                log.warn("Invalid uuid cookie found: {}", uuid);
+            }
+        } else {
+            if (uuidCookie.isEmpty()) {
+                log.trace("No uuid cookie found for path: {}", request.getRequestURI());
+            } else {
+                log.trace("SecurityContext already has Authentication for path: {}", request.getRequestURI());
+            }
+        }
+
+        filterChain.doFilter(request, response);
+    }
+
+    private Optional<String> extractUuidCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            return Optional.empty();
+        }
+        return Arrays.stream(cookies)
+                .filter(cookie -> "uuid".equals(cookie.getName()))
+                .map(Cookie::getValue)
+                .findFirst();
+    }
+
+    private void clearCookie(HttpServletResponse response, String name) {
+        Cookie cookie = new Cookie(name, null);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        cookie.setHttpOnly(true);
+        response.addCookie(cookie);
+    }
+}
+
+================
+File: config/SecurityConfig.java
+================
+package com.code.codenest.config;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Autowired
+    private CookieAuthenticationFilter cookieAuthenticationFilter;
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(
+                                AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/api/code/latest"),
+                                AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/api/code/{uuid:[a-fA-F0-9\\-]+}"),
+                                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/register"),
+                                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/login"),
+                                AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/api/debug/**")
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(
+                                AntPathRequestMatcher.antMatcher("/"),
+                                AntPathRequestMatcher.antMatcher("/index.html"),
+                                AntPathRequestMatcher.antMatcher("/*.css")
+                        ).permitAll()
+                        .anyRequest().authenticated()
+                )
+                .addFilterBefore(cookieAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+}
+
+================
+File: config/WebConfig.java
+================
+package com.code.codenest.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowedOrigins("http://localhost:5173") // Add your React app URL
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true)
+                .maxAge(3600);
+    }
+}
+
+================
+File: controller/ApiController.java
+================
+package com.code.codenest.controller;
+
+import com.code.codenest.dto.SnipCreateRequest;
+import com.code.codenest.dto.SnipResponse;
+import com.code.codenest.dto.UserResponse;
+import com.code.codenest.exception.SnippetNotFoundException;
+import com.code.codenest.model.*;
+import com.code.codenest.repository.*;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+import com.code.codenest.dto.SnipResponse;
+import com.code.codenest.dto.UserResponse;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.code.codenest.dto.UserUpdateRequest;
+
+import java.util.stream.Collectors;
+import java.util.Collections;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping("/api")
+public class ApiController {
+    private static final Logger logger = LoggerFactory.getLogger(ApiController.class);
+
+    public static final HttpHeaders RESPONSE_HEADERS = new HttpHeaders();
+
+    static {
+        RESPONSE_HEADERS.setContentType(MediaType.valueOf("application/json; charset=UTF-8"));
+    }
+
+    private final UserRepository userRepository;
+    private final SnipRepository snipRepository;
+    private final TagRepository tagRepository;
+    private final SnipTagRepository snipTagRepository;
+    private final ViewLogRepository viewLogRepository;
+    private final ExpirationLogRepository expirationLogRepository;
+
+    @Autowired
+    private ApiController(
+            UserRepository userRepo,
+            SnipRepository snipRepo,
+            TagRepository tagRepo,
+            SnipTagRepository snipTagRepo,
+            ViewLogRepository viewLogRepo,
+            ExpirationLogRepository expirationLogRepo) {
+        this.userRepository = userRepo;
+        this.snipRepository = snipRepo;
+        this.tagRepository = tagRepo;
+        this.snipTagRepository = snipTagRepo;
+        this.viewLogRepository = viewLogRepo;
+        this.expirationLogRepository = expirationLogRepo;
+    }
+
+    @PutMapping("/user/profile")
+    public ResponseEntity<Map<String, Object>> updateProfile(
+            @RequestBody UserUpdateRequest request,
+            @CookieValue(name = "uuid", defaultValue = "") String userUuid) {
+
+        if (userUuid.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authentication required"));
+        }
+
+        User user = userRepository.findByUuid(userUuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authentication session."));
+
+        boolean updated = false;
+
+        // Update username if provided and different
+        if (request.getUsername() != null && !request.getUsername().trim().isEmpty() && !request.getUsername().trim().equals(user.getUsername())) {
+            // Check if username is already taken by another user
+            Optional<User> existingUser = userRepository.findByUsername(request.getUsername().trim());
+            if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId())) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Username already taken"));
+            }
+            user.setUsername(request.getUsername().trim());
+            updated = true;
+            logger.info("Updating username for user {}", user.getId());
+        }
+
+        // Update email if provided and different
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty() && !request.getEmail().trim().equalsIgnoreCase(user.getEmail())) {
+            String newEmail = request.getEmail().trim();
+            // Check if email is already taken by another user
+            Optional<User> existingUser = userRepository.findByEmail(newEmail);
+            if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId())) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Email already registered by another user"));
+            }
+            user.setEmail(newEmail);
+            updated = true;
+            logger.info("Updating email for user {}", user.getId());
+        }
+
+        // Update optional fields (allow setting to null or empty)
+        if (request.getPersonal() != null && !request.getPersonal().equals(user.getPersonal())) {
+            user.setPersonal(request.getPersonal().trim().isEmpty() ? null : request.getPersonal().trim());
+            updated = true;
+            logger.info("Updating personal link for user {}", user.getId());
+        }
+        if (request.getGithub() != null && !request.getGithub().equals(user.getGithub())) {
+            user.setGithub(request.getGithub().trim().isEmpty() ? null : request.getGithub().trim());
+            updated = true;
+            logger.info("Updating github link for user {}", user.getId());
+        }
+        if (request.getLinkedin() != null && !request.getLinkedin().equals(user.getLinkedin())) {
+            user.setLinkedin(request.getLinkedin().trim().isEmpty() ? null : request.getLinkedin().trim());
+            updated = true;
+            logger.info("Updating linkedin link for user {}", user.getId());
+        }
+
+
+        if (updated) {
+            User savedUser = userRepository.save(user);
+            logger.info("User {} profile updated successfully.", savedUser.getId());
+            // Return updated user data
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Profile updated successfully",
+                    "user", new UserResponse(savedUser) // Return updated user info
+            ));
+        } else {
+            logger.info("No changes detected for user {} profile update.", user.getId());
+            return ResponseEntity.ok(Map.of("success", true, "message", "No changes detected"));
+        }
+    }
+
+    @GetMapping("/user/snippets")
+    public ResponseEntity<Map<String, Object>> getUserSnippets(
+            @CookieValue(name = "uuid", defaultValue = "") String userUuid) {
+
+        if (userUuid.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authentication required"));
+        }
+
+        User user = userRepository.findByUuid(userUuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authentication session."));
+
+        List<Snip> userSnips = snipRepository.findByUserIdOrderByIdDesc(user.getId());
+
+        if (userSnips.isEmpty()) {
+            return ResponseEntity.ok(Map.of("success", true, "snippets", Collections.emptyList()));
+        }
+
+        UserResponse authorResponse = new UserResponse(user); // Author is always the current user
+
+        List<SnipResponse> snipResponses = userSnips.stream()
+                .map(snip -> {
+                    // Get tags for this snip
+                    List<String> tags = snipTagRepository.findBySnipId(snip.getId())
+                            .stream()
+                            .map(st -> st.getTag().getName())
+                            .collect(Collectors.toList());
+
+                    boolean isAccessible = snip.isAccessible(); // Calculate beforehand
+
+                    // Create the response object
+                    SnipResponse responseDto = new SnipResponse(snip, authorResponse, tags);
+
+                    // *** ENSURE isAccessible is set (redundant if constructor is reliable) ***
+//                    responseDto.setAccessible(isAccessible); // SnipResponse needs a setter if you use this line
+
+                    return responseDto; // Return the DTO created by the constructor
+                })
+                .collect(Collectors.toList());
+
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("snippets", snipResponses);
+        // No need to return separate "authors" list as it's always the same user
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("code/new")
+    public ResponseEntity<?> createSnippet(
+            @RequestBody SnipCreateRequest request,
+            @CookieValue(name = "uuid", defaultValue = "") String userUuid) {
+
+        // --- Get User from Cookie ---
+        if (userUuid.isEmpty()) {
+            logger.warn("Attempt to create snippet without authentication cookie.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authentication required to create snippet."));
+        }
+
+        User user = userRepository.findByUuid(userUuid)
+                .orElseThrow(() -> {
+                    logger.error("Authenticated user UUID {} not found in database.", userUuid);
+                    return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authentication session.");
+                });
+        logger.info("Received request to /api/code/new");
+        logger.info("Request DTO content: [{}]", request.getContent());
+        logger.info("Request Expiration Type: {}, Value: {}", request.getExpirationType(), request.getExpirationValue()); // Log received values
+
+        Snip newSnippet = new Snip();
+        newSnippet.setTitle(request.getTitle());
+        newSnippet.setContent(request.getContent());
+        newSnippet.setUserId(user.getId());
+
+        newSnippet.setExpirationType(request.getExpirationType()); // Set type (can be null)
+        newSnippet.setExpirationValue(request.getExpirationValue()); // Set value (can be 0)
+        logger.info("Setting Snip Entity Expiration Type: {}, Value: {}", newSnippet.getExpirationType(), newSnippet.getExpirationValue());
+        // --- END CORRECTION ---
+
+        Snip savedSnippet = snipRepository.save(newSnippet);
+
+        // Process tags if present
+        if (request.getTags() != null && !request.getTags().isEmpty()) {
+            logger.info("Processing tags: {}", request.getTags());
+            for (String tagName : request.getTags()) {
+                if (tagName == null || tagName.trim().isEmpty()) {
+                    logger.warn("Skipping empty or null tag name.");
+                    continue;
+                }
+                String cleanTagName = tagName.trim();
+                Tag tag = tagRepository.findByName(cleanTagName)
+                        .orElseGet(() -> {
+                            logger.info("Tag '{}' not found, creating new tag.", cleanTagName);
+                            Tag newTag = new Tag();
+                            newTag.setName(cleanTagName);
+                            return tagRepository.save(newTag);
+                        });
+
+                SnipTag snipTag = new SnipTag();
+                snipTag.setSnip(savedSnippet);
+                snipTag.setTag(tag);
+                snipTagRepository.save(snipTag);
+            }
+        } else {
+            logger.info("No tags provided in request.");
+        }
+
+        logger.debug("Created snippet via /api/code/new with UUID: {}", savedSnippet.getUuid());
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("uuid", savedSnippet.getUuid());
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/register")
+    ResponseEntity<Map<String, Object>> createUser(@RequestBody User user, HttpServletResponse response) {
+        try {
+            // Validate the user data
+            if (user.getEmail() == null || user.getEmail().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Email is required"));
+            }
+
+            // Check if email already exists
+            if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Email already registered"));
+            }
+
+            // Check if username already exists
+            if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Username already taken"));
+            }
+
+            var saved = userRepository.save(user);
+
+            // Set the cookie for automatic login
+            var cookie = new Cookie("uuid", saved.getUuid());
+            cookie.setHttpOnly(true);
+            cookie.setPath("/");
+            cookie.setMaxAge(1_166_000); // Default to remember
+            response.addCookie(cookie);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "id", saved.getId(),
+                    "uuid", saved.getUuid(),
+                    "username", saved.getUsername(),
+                    "email", saved.getEmail()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Registration failed: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, Object>> login(@RequestBody BaseCredentials credentials, HttpServletResponse response) {
+        logger.debug("Login attempt for email: {}", credentials.getEmail());
+
+        var optUser = userRepository.findByEmail(credentials.getEmail());
+
+        if (optUser.isPresent()) {
+            var user = optUser.get();
+
+            if (user.checkPassword(credentials.getPassword())) {
+                logger.info("Successful login for user: {}", user.getEmail());
+
+                // Make sure cookie name is explicitly set
+                Cookie cookie = new Cookie("uuid", user.getUuid());
+                cookie.setHttpOnly(true);
+                cookie.setPath("/");
+                cookie.setMaxAge(credentials.isRemember() ? 1_166_000 : 360);
+                response.addCookie(cookie);
+                logger.debug("Auth cookie set for user: {}", user.getUuid());
+
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "uuid", user.getUuid(),
+                        "username", user.getUsername(),
+                        "email", user.getEmail()
+                ));
+            }
+        }
+
+        logger.warn("Failed login attempt for email: {}", credentials.getEmail());
+        return ResponseEntity.status(401).body(Map.of("success", false, "message", "Invalid email or password"));
+    }
+
+    @PostMapping("/logout")
+    ResponseEntity<Map<String, Boolean>> logout(HttpServletResponse response) {
+        Cookie cookie = new Cookie("uuid", null);
+        cookie.setMaxAge(0);
+        cookie.setPath("/");
+        response.addCookie(cookie);
+
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    @GetMapping("/auth/me")
+    public ResponseEntity<?> getCurrentUser(@CookieValue(name = "uuid", defaultValue = "") String uuid) {
+        logger.debug("Auth check for UUID: {}", uuid);
+
+        if (uuid.isEmpty()) {
+            logger.warn("Auth check failed: No UUID cookie present");
+            return ResponseEntity.status(401).body(Map.of("message", "Not authenticated"));
+        }
+
+        Optional<User> optUser = userRepository.findByUuid(uuid);
+        if (optUser.isPresent()) {
+            User user = optUser.get();
+            logger.debug("Auth check successful for user: {}", user.getUsername());
+            return ResponseEntity.ok(Map.of(
+                    "uuid", user.getUuid(),
+                    "username", user.getUsername(),
+                    "email", user.getEmail()
+            ));
+        }
+
+        logger.warn("Auth check failed: Invalid UUID - {}", uuid);
+        return ResponseEntity.status(401).body(Map.of("message", "Invalid authentication"));
+    }
+
+    @GetMapping("/code/latest")
+    ResponseEntity<Map<String, Object>> getLatest10AsJson() {
+        List<Snip> snippetList = snipRepository.findLatest10();
+
+        List<UserResponse> authorResponses = new ArrayList<>();
+        List<SnipResponse> snipResponses = new ArrayList<>();
+
+        for (Snip snip : snippetList) {
+            User user = userRepository.findById(snip.getUserId())
+                    .orElse(User.UNKNOWN);
+
+            List<String> tags = snipTagRepository.findBySnipId(snip.getId())
+                    .stream()
+                    .map(st -> st.getTag().getName())
+                    .collect(Collectors.toList());
+
+            UserResponse userResponse = new UserResponse(user);
+            SnipResponse snipResponse = new SnipResponse(snip, userResponse, tags);
+
+            authorResponses.add(userResponse);
+            snipResponses.add(snipResponse);
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("snippets", snipResponses);
+        response.put("authors", authorResponses);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/code/{uuid}")
+    ResponseEntity<Map<String, Object>> getByIdAsJson(
+            @PathVariable String uuid,
+            @RequestParam(required = false, defaultValue = "false") boolean skipIncrement,
+            @CookieValue(name = "uuid", required = false) String userUuid) {
+
+        logger.debug("Get snippet by UUID: {}, skipIncrement: {}", uuid, skipIncrement);
+
+        var optionalSnippet = snipRepository.findByUuid(uuid);
+
+        if (optionalSnippet.isPresent()) {
+            var snip = optionalSnippet.get();
+
+            if (snip.isAccessible()) {
+                // Only increment view count if we're not skipping
+                if (!skipIncrement) {
+                    snip.increaseViewCount();
+                    snip = snipRepository.save(snip);
+                    logger.debug("Incremented view count for snippet: {}, new count: {}",
+                            uuid, snip.getViewCount());
+
+                    // Create view log if user is authenticated
+                    if (userUuid != null && !userUuid.isEmpty()) {
+                        User viewer = userRepository.findByUuid(userUuid).orElse(null);
+                        if (viewer != null) {
+                            ViewLog viewLog = new ViewLog();
+                            viewLog.setSnip(snip);
+                            viewLog.setViewerId(viewer.getId());
+                            viewLogRepository.save(viewLog);
+                        }
+                    }
+
+                    // Check if snippet expired due to views
+                    if ("VIEWS".equals(snip.getExpirationType()) &&
+                            snip.getViewCount() >= snip.getExpirationValue()) {
+                        ExpirationLog expLog = new ExpirationLog();
+                        expLog.setSnipId(snip.getId());
+                        expLog.setExpirationReason("VIEWS");
+                        expirationLogRepository.save(expLog);
+                    }
+                } else {
+                    logger.debug("Skipped incrementing view count for snippet: {}", uuid);
+                }
+
+                User author = userRepository.findById(snip.getUserId())
+                        .orElse(User.UNKNOWN);
+
+                // Get tags for this snip
+                List<String> tags = snipTagRepository.findBySnipId(snip.getId())
+                        .stream()
+                        .map(st -> st.getTag().getName())
+                        .collect(Collectors.toList());
+
+                UserResponse authorResponse = new UserResponse(author);
+                SnipResponse snipResponse = new SnipResponse(snip, authorResponse, tags);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("snippet", snipResponse);
+                response.put("author", authorResponse);
+                response.put("tags", tags);
+
+                return ResponseEntity.ok(response);
+            } else {
+                logger.debug("Snippet not accessible: {}", uuid);
+                return ResponseEntity.status(403).body(Map.of(
+                        "message", "The code snippet has expired.",
+                        "expired", true
+                ));
+            }
+        }
+
+        logger.debug("Snippet not found: {}", uuid);
+        return ResponseEntity.status(404).body(Map.of("message", "No such code snippet"));
+    }
+
+    @GetMapping("/debug/cookies")
+    public ResponseEntity<Map<String, Object>> debugCookies(HttpServletRequest request) {
+        Map<String, Object> response = new HashMap<>();
+
+        // Get all cookies
+        Cookie[] cookies = request.getCookies();
+        Map<String, String> cookieMap = new HashMap<>();
+
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                cookieMap.put(cookie.getName(), cookie.getValue());
+            }
+            response.put("cookies", cookieMap);
+            response.put("cookieCount", cookies.length);
+        } else {
+            response.put("cookies", "No cookies found");
+            response.put("cookieCount", 0);
+        }
+
+        // Get all headers
+        Map<String, String> headerMap = new HashMap<>();
+        Enumeration<String> headerNames = request.getHeaderNames();
+        while (headerNames.hasMoreElements()) {
+            String headerName = headerNames.nextElement();
+            headerMap.put(headerName, request.getHeader(headerName));
+        }
+        response.put("headers", headerMap);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/debug/snippet/{uuid}")
+    public ResponseEntity<Map<String, Object>> debugSnippet(@PathVariable String uuid) {
+        var optionalCodeSnippet = snipRepository.findByUuid(uuid);
+
+        if (optionalCodeSnippet.isPresent()) {
+            var snippet = optionalCodeSnippet.get();
+
+            Map<String, Object> debugInfo = new HashMap<>();
+            debugInfo.put("uuid", snippet.getUuid());
+            debugInfo.put("title", snippet.getTitle());
+            debugInfo.put("userId", snippet.getUserId());
+            debugInfo.put("expirationType", snippet.getExpirationType());
+            debugInfo.put("expirationValue", snippet.getExpirationValue());
+            debugInfo.put("creationDate", snippet.getCreatedAt());
+            debugInfo.put("currentServerTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu/MM/dd HH:mm:ss")));
+            debugInfo.put("isTimeRestricted", "TIME".equals(snippet.getExpirationType()));
+            debugInfo.put("remainingSeconds", snippet.getRemainingSeconds());
+            debugInfo.put("isExpired", !snippet.isAccessible());
+            debugInfo.put("viewCount", snippet.getViewCount());
+            debugInfo.put("isViewRestricted", "VIEWS".equals(snippet.getExpirationType()));
+            debugInfo.put("isDeleted", snippet.isDeleted());
+
+            // Tags
+            List<String> tags = snipTagRepository.findBySnipId(snippet.getId())
+                    .stream()
+                    .map(st -> st.getTag().getName())
+                    .collect(Collectors.toList());
+            debugInfo.put("tags", tags);
+
+            // View logs
+            List<Map<String, Object>> viewLogs = viewLogRepository.findBySnipId(snippet.getId())
+                    .stream()
+                    .map(vl -> {
+                        Map<String, Object> logInfo = new HashMap<>();
+                        logInfo.put("id", vl.getId());
+                        logInfo.put("viewerId", vl.getViewerId());
+                        logInfo.put("viewedAt", vl.getViewedAt());
+                        return logInfo;
+                    })
+                    .collect(Collectors.toList());
+            debugInfo.put("viewLogs", viewLogs);
+
+            return ResponseEntity.ok(debugInfo);
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+}
+
+================
+File: controller/ErrorHandlingController.java
+================
+package com.code.codenest.controller;
+
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ControllerAdvice
+public class ErrorHandlingController {
+    @ExceptionHandler(Exception.class)
+    public String handleError(HttpServletRequest request, Exception exception, Model model)
+            throws Exception {
+
+        // Rethrow the exceptions with @ResponseStatus annotation.
+        if (AnnotationUtils.findAnnotation(exception.getClass(), ResponseStatus.class) != null) {
+            throw exception;
+        }
+
+        model.addAttribute("exception", exception);
+        model.addAttribute("url", request.getRequestURL());
+        return "error";
+    }
+}
+
+================
+File: controller/GroupController.java
+================
+package com.code.codenest.controller;
+
+import com.code.codenest.dto.GroupCreateRequest;
+import com.code.codenest.model.Group;
+import com.code.codenest.model.GroupMember;
+import com.code.codenest.model.User;
+import com.code.codenest.repository.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+import com.code.codenest.model.GroupSnip;
+import com.code.codenest.model.Snip;
+import com.code.codenest.dto.SnipResponse;
+
+
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.ArrayList;
+
+@RestController
+@RequestMapping("/api/groups")
+public class GroupController {
+    private static final Logger logger = LoggerFactory.getLogger(GroupController.class);
+
+    private final GroupRepository groupRepository;
+    private final GroupMemberRepository groupMemberRepository;
+    private final UserRepository userRepository;
+    private final GroupSnipRepository groupSnipRepository;
+    private final SnipRepository snipRepository;
+    private final SnipTagRepository snipTagRepository; // Added this
+
+    @Autowired
+    public GroupController(
+            GroupRepository groupRepository,
+            GroupMemberRepository groupMemberRepository,
+            UserRepository userRepository,
+            GroupSnipRepository groupSnipRepository,
+            SnipRepository snipRepository,
+            SnipTagRepository snipTagRepository) { // Added this
+        this.groupRepository = groupRepository;
+        this.groupMemberRepository = groupMemberRepository;
+        this.userRepository = userRepository;
+        this.groupSnipRepository = groupSnipRepository;
+        this.snipRepository = snipRepository;
+        this.snipTagRepository = snipTagRepository; // Added this
+    }
+
+    @PostMapping
+    public ResponseEntity<Map<String, Object>> createGroup(
+            @RequestBody GroupCreateRequest request,
+            @CookieValue(name = "uuid", defaultValue = "") String creatorUuid) {
+
+        if (creatorUuid.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authentication required"));
+        }
+
+        User creator = userRepository.findByUuid(creatorUuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authentication"));
+
+        Group group = new Group();
+        group.setName(request.getName());
+        group.setCreatorId(creator.getId());
+
+        Group savedGroup = groupRepository.save(group);
+
+        // Add creator as a member
+        GroupMember member = new GroupMember();
+        member.setGroup(savedGroup);
+        member.setUserId(creator.getId());
+        groupMemberRepository.save(member);
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "groupId", savedGroup.getId(),
+                "name", savedGroup.getName()
+        ));
+    }
+
+    @PostMapping("/{groupId}/members")
+    public ResponseEntity<Map<String, Object>> addMember(
+            @PathVariable Long groupId,
+            @RequestBody Map<String, String> payload,
+            @CookieValue(name = "uuid", defaultValue = "") String adminUuid) {
+
+        if (adminUuid.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authentication required"));
+        }
+
+        User admin = userRepository.findByUuid(adminUuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authentication"));
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found"));
+
+        // Check if user is admin of the group
+        if (!group.getCreatorId().equals(admin.getId())) {
+            logger.warn("User {} attempted to add member to group {} but is not creator.", admin.getId(), groupId);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("success", false, "message", "Only group creator can add members"));
+        }
+
+        // --- Find user by email ---
+        String emailToAdd = payload.get("email");
+        if (emailToAdd == null || emailToAdd.trim().isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", "Email is required to add a member"));
+        }
+
+        Optional<User> userToAddOptional = userRepository.findByEmail(emailToAdd.trim());
+        if (userToAddOptional.isEmpty()) {
+            logger.info("Attempted to add non-existent user with email {} to group {}", emailToAdd, groupId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "message", "User with email '" + emailToAdd + "' not found"));
+        }
+
+        User userToAdd = userToAddOptional.get();
+        Long userIdToAdd = userToAdd.getId();
+
+        // Check if user is already a member
+        if (groupMemberRepository.findByGroupIdAndUserId(groupId, userIdToAdd).isPresent()) {
+            logger.info("Attempted to add user {} (email {}) to group {} but they are already a member.", userIdToAdd, emailToAdd, groupId);
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", "User is already a member of this group"));
+        }
+
+        // Add the user to the group
+        GroupMember member = new GroupMember();
+        member.setGroup(group);
+        member.setUserId(userIdToAdd); // Use the found ID
+        groupMemberRepository.save(member);
+
+        logger.info("User {} (email {}) added to group {} by admin {}", userIdToAdd, emailToAdd, groupId, admin.getId());
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "User added to the group"
+        ));
+    }
+
+    @DeleteMapping("/{groupId}/members/{userId}")
+    public ResponseEntity<Map<String, Object>> removeMember(
+            @PathVariable Long groupId,
+            @PathVariable Long userId,
+            @CookieValue(name = "uuid", defaultValue = "") String adminUuid) {
+
+        if (adminUuid.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authentication required"));
+        }
+
+        User admin = userRepository.findByUuid(adminUuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authentication"));
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found"));
+
+        // Check if user is admin of the group
+        if (!group.getCreatorId().equals(admin.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("success", false, "message", "Only group creator can remove members"));
+        }
+
+        // Cannot remove the creator
+        if (group.getCreatorId().equals(userId)) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", "Cannot remove the group creator"));
+        }
+
+        // Find the membership to delete
+        Optional<GroupMember> memberToRemove = groupMemberRepository.findByGroupIdAndUserId(groupId, userId);
+        if (memberToRemove.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "message", "User is not a member of this group"));
+        }
+
+        // Remove the user from the group
+        groupMemberRepository.delete(memberToRemove.get());
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "User removed from the group"
+        ));
+    }
+
+    @GetMapping("/{groupId}/members")
+    public ResponseEntity<Map<String, Object>> getMembers(
+            @PathVariable Long groupId,
+            @CookieValue(name = "uuid", defaultValue = "") String userUuid) {
+
+        if (userUuid.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authentication required"));
+        }
+
+        User user = userRepository.findByUuid(userUuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authentication"));
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found"));
+
+        // Check if user is a member of the group OR the creator
+        boolean isMember = groupMemberRepository.findByGroupIdAndUserId(groupId, user.getId()).isPresent();
+        boolean isCreator = group.getCreatorId().equals(user.getId());
+
+        if (!isMember && !isCreator) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("success", false, "message", "You are not a member or creator of this group"));
+        }
+
+        // Get all members
+        List<Map<String, Object>> members = groupMemberRepository.findByGroupId(groupId)
+                .stream()
+                .map(member -> {
+                    // Use orElse(User.UNKNOWN) for robustness if a user linked to a member gets deleted somehow
+                    User memberUser = userRepository.findById(member.getUserId()).orElse(User.UNKNOWN);
+
+                    Map<String, Object> memberMap = new HashMap<>();
+                    memberMap.put("id", memberUser.getId()); // Include ID
+                    memberMap.put("username", memberUser.getUsername());
+                    memberMap.put("uuid", memberUser.getUuid()); // Include UUID if useful for frontend
+                    memberMap.put("joinedAt", member.getJoinedAt());
+                    memberMap.put("isCreator", memberUser.getId().equals(group.getCreatorId())); // Check creator status
+
+                    return memberMap;
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "groupId", group.getId(),
+                "groupName", group.getName(),
+                "members", members
+        ));
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<Map<String, Object>> getMyGroups(
+            @CookieValue(name = "uuid", defaultValue = "") String userUuid) {
+
+        if (userUuid.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authentication required"));
+        }
+
+        User user = userRepository.findByUuid(userUuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authentication"));
+
+        // Get groups created by user
+        List<Map<String, Object>> createdGroups = groupRepository.findByCreatorId(user.getId())
+                .stream()
+                .map(group -> {
+                    Map<String, Object> groupMap = new HashMap<>();
+                    groupMap.put("id", group.getId());
+                    groupMap.put("name", group.getName());
+                    groupMap.put("createdAt", group.getCreatedAt());
+                    groupMap.put("memberCount", groupMemberRepository.countByGroupId(group.getId())); // More efficient count
+                    groupMap.put("role", "creator");
+
+                    return groupMap;
+                })
+                .collect(Collectors.toList());
+
+        // Get groups where user is a member (excluding ones they created)
+        List<Map<String, Object>> memberGroups = groupMemberRepository.findByUserId(user.getId())
+                .stream()
+                .filter(member -> !member.getGroup().getCreatorId().equals(user.getId())) // Filter out groups they created
+                .map(member -> {
+                    Group group = member.getGroup();
+
+                    Map<String, Object> groupMap = new HashMap<>();
+                    groupMap.put("id", group.getId());
+                    groupMap.put("name", group.getName());
+                    groupMap.put("createdAt", group.getCreatedAt());
+                    groupMap.put("memberCount", groupMemberRepository.countByGroupId(group.getId())); // More efficient count
+                    groupMap.put("joinedAt", member.getJoinedAt());
+                    groupMap.put("role", "member");
+
+                    return groupMap;
+                })
+                .collect(Collectors.toList());
+
+        // Combine the lists
+        List<Map<String, Object>> allGroups = new ArrayList<>(createdGroups);
+        allGroups.addAll(memberGroups);
+
+        // Optionally sort the combined list, e.g., by name or creation date
+        allGroups.sort(Comparator.comparing(g -> (String) g.get("name")));
+
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "groups", allGroups
+        ));
+    }
+
+    @GetMapping("/{groupId}/snippets")
+    public ResponseEntity<Map<String, Object>> getGroupSnippets(
+            @PathVariable Long groupId,
+            @CookieValue(name = "uuid", defaultValue = "") String userUuid) {
+
+        if (userUuid.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authentication required"));
+        }
+
+        User user = userRepository.findByUuid(userUuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authentication"));
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found"));
+
+        // Check if user is a member of the group OR the creator
+        boolean isMember = groupMemberRepository.findByGroupIdAndUserId(groupId, user.getId()).isPresent();
+        boolean isCreator = group.getCreatorId().equals(user.getId());
+
+        if (!isMember && !isCreator) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("success", false, "message", "You are not a member of this group"));
+        }
+
+        // Get all shared snippets for this group
+        List<GroupSnip> groupSnips = groupSnipRepository.findByGroupIdWithSnips(groupId);
+
+        List<Map<String, Object>> snippetResponses = new ArrayList<>();
+
+        for (GroupSnip groupSnip : groupSnips) {
+            Snip snip = groupSnip.getSnip();
+            User author = userRepository.findById(snip.getUserId()).orElse(User.UNKNOWN);
+            User sharer = userRepository.findById(groupSnip.getSharedById()).orElse(User.UNKNOWN);
+
+            // Get tags for this snip
+            List<String> tags = snipTagRepository.findBySnipId(snip.getId())
+                    .stream()
+                    .map(st -> st.getTag().getName())
+                    .collect(Collectors.toList());
+
+            Map<String, Object> snippetResponse = new HashMap<>();
+            snippetResponse.put("id", snip.getId());
+            snippetResponse.put("uuid", snip.getUuid());
+            snippetResponse.put("title", snip.getTitle() != null ? snip.getTitle() : "Untitled Snippet");
+            snippetResponse.put("content", snip.getContent());
+            snippetResponse.put("createdAt", snip.getCreatedAt().toString());
+
+            // Create simple author objects without requiring UserResponse class
+            Map<String, Object> authorMap = new HashMap<>();
+            authorMap.put("id", author.getId());
+            authorMap.put("uuid", author.getUuid());
+            authorMap.put("username", author.getUsername());
+
+            Map<String, Object> sharerMap = new HashMap<>();
+            sharerMap.put("id", sharer.getId());
+            sharerMap.put("uuid", sharer.getUuid());
+            sharerMap.put("username", sharer.getUsername());
+
+            snippetResponse.put("author", authorMap);
+            snippetResponse.put("sharedBy", sharerMap);
+            snippetResponse.put("sharedAt", groupSnip.getSharedAt().toString());
+            snippetResponse.put("tags", tags);
+
+            snippetResponses.add(snippetResponse);
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "snippets", snippetResponses
+        ));
+    }
+
+    @PostMapping("/{groupId}/snippets")
+    public ResponseEntity<Map<String, Object>> shareSnippet(
+            @PathVariable Long groupId,
+            @RequestBody Map<String, Object> payload,
+            @CookieValue(name = "uuid", defaultValue = "") String userUuid) {
+
+        if (userUuid.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authentication required"));
+        }
+
+        User user = userRepository.findByUuid(userUuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authentication"));
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found"));
+
+        // Check if user is a member of the group OR the creator
+        boolean isMember = groupMemberRepository.findByGroupIdAndUserId(groupId, user.getId()).isPresent();
+        boolean isCreator = group.getCreatorId().equals(user.getId());
+
+        if (!isMember && !isCreator) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("success", false, "message", "You are not a member of this group"));
+        }
+
+        // Get snippet ID from request
+        Long snippetId = null;
+        try {
+            if (payload.containsKey("snippetId")) {
+                snippetId = Long.parseLong(payload.get("snippetId").toString());
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "message", "Snippet ID is required"));
+            }
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", "Invalid snippet ID format"));
+        }
+
+        // Check if the snippet exists and is accessible
+        Snip snippet = snipRepository.findById(snippetId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Snippet not found"));
+
+        // Make sure the snippet belongs to the user or is accessible
+        if (!snippet.getUserId().equals(user.getId()) && !snippet.isAccessible()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("success", false, "message", "You cannot share this snippet"));
+        }
+
+        // Check if snippet is already shared with the group
+        if (groupSnipRepository.findByGroupIdAndSnipId(groupId, snippetId).isPresent()) {
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Snippet is already shared with this group"
+            ));
+        }
+
+        // Create the group-snippet relationship
+        GroupSnip groupSnip = new GroupSnip();
+        groupSnip.setGroup(group);
+        groupSnip.setSnip(snippet);
+        groupSnip.setSharedById(user.getId());
+        groupSnip.setSharedAt(LocalDateTime.now());
+
+        groupSnipRepository.save(groupSnip);
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Snippet shared successfully"
+        ));
+    }
+}
+
+================
+File: controller/MessageController.java
+================
+package com.code.codenest.controller;
+
+import com.code.codenest.dto.MessageCreateRequest;
+import com.code.codenest.model.Message;
+import com.code.codenest.model.Snip;
+import com.code.codenest.model.User;
+import com.code.codenest.repository.MessageRepository;
+import com.code.codenest.repository.SnipRepository;
+import com.code.codenest.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.Optional;
+import java.util.Comparator;
+
+@RestController
+@RequestMapping("/api/messages")
+public class MessageController {
+    private static final Logger logger = LoggerFactory.getLogger(MessageController.class);
+
+    private final MessageRepository messageRepository;
+    private final UserRepository userRepository;
+    private final SnipRepository snipRepository;
+
+    @Autowired
+    public MessageController(MessageRepository messageRepository, UserRepository userRepository, SnipRepository snipRepository) {
+        this.messageRepository = messageRepository;
+        this.userRepository = userRepository;
+        this.snipRepository = snipRepository;
+    }
+
+    @PostMapping
+    public ResponseEntity<Map<String, Object>> createMessage(
+            @RequestBody MessageCreateRequest request,
+            @CookieValue(name = "uuid", defaultValue = "") String senderUuid) {
+
+        if (senderUuid.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authentication required"));
+        }
+
+        User sender = userRepository.findByUuid(senderUuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authentication"));
+
+        User receiver = null;
+        if (request.getReceiverId() != null) {
+            // If ID is provided, use it directly
+            receiver = userRepository.findById(request.getReceiverId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recipient user ID not found"));
+        } else if (request.getReceiverEmail() != null && !request.getReceiverEmail().trim().isEmpty()) {
+            // If email is provided, look up by email
+            Optional<User> receiverOpt = userRepository.findByEmail(request.getReceiverEmail().trim());
+            if (receiverOpt.isPresent()) {
+                receiver = receiverOpt.get();
+            } else {
+                logger.info("Attempt to send message to non-existent email: {}", request.getReceiverEmail());
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("success", false, "message", "Recipient email not found"));
+            }
+        } else {
+            // If neither ID nor email is provided
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", "Recipient ID or Email is required"));
+        }
+
+        // Prevent sending message to self
+        if (sender.getId().equals(receiver.getId())) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", "Cannot send messages to yourself"));
+        }
+
+        Message message = new Message();
+        message.setSenderId(sender.getId());
+        message.setReceiverId(receiver.getId());
+        message.setContent(request.getContent());
+
+        if (request.getSnipId() != null) {
+            message.setSnipId(request.getSnipId());
+        } else if (request.getSnipUuid() != null && !request.getSnipUuid().isEmpty()) {
+            // Look up the snippet by UUID
+            Optional<Snip> snipOptional = snipRepository.findByUuid(request.getSnipUuid());
+            if (snipOptional.isPresent()) {
+                message.setSnipId(snipOptional.get().getId());
+            }
+        }
+
+        Message saved = messageRepository.save(message);
+
+        logger.info("Message {} created from user {} to user {}", saved.getId(), sender.getId(), receiver.getId());
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "messageId", saved.getId()
+        ));
+    }
+
+    @GetMapping("/inbox")
+    public ResponseEntity<Map<String, Object>> getInboxMessages(
+            @CookieValue(name = "uuid", defaultValue = "") String userUuid) {
+
+        if (userUuid.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authentication required"));
+        }
+
+        User user = userRepository.findByUuid(userUuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authentication"));
+
+        List<Map<String, Object>> messages = messageRepository.findByReceiverIdOrderBySentAtDesc(user.getId()) // Add sorting
+                .stream()
+                .map(message -> {
+                    User sender = userRepository.findById(message.getSenderId()).orElse(User.UNKNOWN);
+
+                    Map<String, Object> messageMap = new HashMap<>();
+                    messageMap.put("id", message.getId());
+                    messageMap.put("senderId", message.getSenderId());
+                    messageMap.put("senderName", sender.getUsername());
+                    messageMap.put("content", message.getContent());
+                    messageMap.put("sentAt", message.getSentAt());
+                    messageMap.put("snipId", message.getSnipId()); // Include snipId always (null if not present)
+
+                    return messageMap;
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "messages", messages
+        ));
+    }
+
+    @GetMapping("/sent")
+    public ResponseEntity<Map<String, Object>> getSentMessages(
+            @CookieValue(name = "uuid", defaultValue = "") String userUuid) {
+
+        if (userUuid.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authentication required"));
+        }
+
+        User user = userRepository.findByUuid(userUuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authentication"));
+
+        List<Map<String, Object>> messages = messageRepository.findBySenderIdOrderBySentAtDesc(user.getId()) // Add sorting
+                .stream()
+                .map(message -> {
+                    User receiver = userRepository.findById(message.getReceiverId()).orElse(User.UNKNOWN);
+
+                    Map<String, Object> messageMap = new HashMap<>();
+                    messageMap.put("id", message.getId());
+                    messageMap.put("receiverId", message.getReceiverId());
+                    messageMap.put("receiverName", receiver.getUsername());
+                    messageMap.put("content", message.getContent());
+                    messageMap.put("sentAt", message.getSentAt());
+                    messageMap.put("snipId", message.getSnipId()); // Include snipId always
+
+                    return messageMap;
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "messages", messages
+        ));
+    }
+
+    @GetMapping("/conversation/{otherUserId}")
+    public ResponseEntity<Map<String, Object>> getConversation(
+            @PathVariable Long otherUserId,
+            @CookieValue(name = "uuid", defaultValue = "") String userUuid) {
+
+        if (userUuid.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authentication required"));
+        }
+
+        User user = userRepository.findByUuid(userUuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authentication"));
+
+        User otherUser = userRepository.findById(otherUserId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        // Get messages involving these two users
+        List<Message> conversationMessages = messageRepository.findConversation(user.getId(), otherUserId);
+
+        // Combine and sort by sent time
+        List<Map<String, Object>> conversation = conversationMessages.stream()
+                .map(message -> {
+                    Map<String, Object> messageMap = new HashMap<>();
+                    messageMap.put("id", message.getId());
+                    messageMap.put("senderId", message.getSenderId());
+                    messageMap.put("receiverId", message.getReceiverId());
+                    messageMap.put("content", message.getContent());
+                    messageMap.put("sentAt", message.getSentAt());
+                    // Determine direction based on the current user's ID
+                    messageMap.put("direction", message.getSenderId().equals(user.getId()) ? "sent" : "received");
+                    messageMap.put("snipId", message.getSnipId());
+
+                    return messageMap;
+                })
+                .sorted(Comparator.comparing(m -> (LocalDateTime) m.get("sentAt"))) // Sort by timestamp
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "otherUser", Map.of(
+                        "id", otherUser.getId(),
+                        "username", otherUser.getUsername(),
+                        "uuid", otherUser.getUuid()
+                ),
+                "messages", conversation
+        ));
+    }
+}
+
+================
+File: dto/GroupCreateRequest.java
+================
+package com.code.codenest.dto;
+
+public class GroupCreateRequest {
+    private String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+}
+
+================
+File: dto/MessageCreateRequest.java
+================
+package com.code.codenest.dto;
+
+public class MessageCreateRequest {
+    private Long receiverId;
+    private Long snipId;
+    private String content;
+    private String receiverEmail;
+    private String snipUuid;
+
+    public Long getReceiverId() {
+        return receiverId;
+    }
+
+    public void setReceiverId(Long receiverId) {
+        this.receiverId = receiverId;
+    }
+
+    public Long getSnipId() {
+        return snipId;
+    }
+
+    public void setSnipId(Long snipId) {
+        this.snipId = snipId;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public String getReceiverEmail() {
+        return receiverEmail;
+    }
+
+    public void setReceiverEmail(String receiverEmail) {
+        this.receiverEmail = receiverEmail;
+    }
+
+    public String getSnipUuid() {
+        return snipUuid;
+    }
+
+    public void setSnipUuid(String snipUuid) {
+        this.snipUuid = snipUuid;
+    }
+}
+
+================
+File: dto/SnipCreateRequest.java
+================
+package com.code.codenest.dto;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.List;
+
+public class SnipCreateRequest {
+    @JsonProperty("title")
+    private String title;
+
+    @JsonProperty("content")
+    private String content;
+
+    @JsonProperty("expirationType")
+    private String expirationType;
+
+    @JsonProperty("expirationValue")
+    private long expirationValue;
+
+    @JsonProperty("tags")
+    private List<String> tags;
+
+
+    public String getTitle() { return title; }
+    public String getContent() { return content; }
+    public String getExpirationType() { return expirationType; }
+    public long getExpirationValue() { return expirationValue; }
+    public List<String> getTags() { return tags; }
+
+
+    public void setTitle(String title) { this.title = title; }
+    public void setContent(String content) { this.content = content; }
+    public void setExpirationType(String expirationType) { this.expirationType = expirationType; }
+    public void setExpirationValue(long expirationValue) { this.expirationValue = expirationValue; }
+    public void setTags(List<String> tags) { this.tags = tags; }
+}
+
+================
+File: dto/SnipResponse.java
+================
+package com.code.codenest.dto;
+
+import com.code.codenest.model.Snip;
+import com.code.codenest.model.Tag;
+// Make sure this import is present
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
+public class SnipResponse {
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+
+    private String uuid;
+    private String title;
+    private String content;
+    private String expirationType;
+    private long expirationValue;
+    private String createdAt;
+    private long viewCount;
+    private UserResponse author;
+    private List<String> tags;
+    private boolean isAccessible; // Field to store the value
+    private long remainingViews;
+    private long remainingSeconds;
+
+    public SnipResponse(Snip snip, UserResponse author, List<String> tags) {
+        this.uuid = snip.getUuid();
+        this.title = snip.getTitle();
+        this.content = snip.getContent();
+        this.expirationType = snip.getExpirationType();
+        this.expirationValue = snip.getExpirationValue();
+        this.createdAt = snip.getCreatedAt().format(FORMATTER);
+        this.viewCount = snip.getViewCount();
+        this.author = author;
+        this.tags = tags;
+        this.isAccessible = snip.isAccessible(); // Calculate and store
+        this.remainingViews = snip.getRemainingViews();
+        this.remainingSeconds = snip.getRemainingSeconds();
+    }
+
+    // --- GETTERS ---
+
+    public String getUuid() { return uuid; }
+    public String getTitle() { return title; }
+    public String getContent() { return content; }
+    public String getExpirationType() { return expirationType; }
+    public long getExpirationValue() { return expirationValue; }
+    public String getCreatedAt() { return createdAt; }
+    public long getViewCount() { return viewCount; }
+    public UserResponse getAuthor() { return author; }
+    public List<String> getTags() { return tags; }
+    public long getRemainingViews() { return remainingViews; }
+    public long getRemainingSeconds() { return remainingSeconds; }
+
+    // Explicitly annotate the getter for Jackson serialization
+    @JsonProperty("isAccessible")
+    public boolean isAccessible() {
+        return isAccessible;
+    }
+}
+
+================
+File: dto/UserResponse.java
+================
+package com.code.codenest.dto;
+
+import com.code.codenest.model.User;
+
+public class UserResponse {
+    private String uuid;
+    private String username;
+    private String email;
+    private String personal;
+    private String github;
+    private String linkedin;
+
+    public UserResponse(User user) {
+        this.uuid = user.getUuid();
+        this.username = user.getUsername();
+        this.email = user.getEmail();
+        this.personal = user.getPersonal();
+        this.github = user.getGithub();
+        this.linkedin = user.getLinkedin();
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getPersonal() {
+        return personal;
+    }
+
+    public String getGithub() {
+        return github;
+    }
+
+    public String getLinkedin() {
+        return linkedin;
+    }
+}
+
+================
+File: dto/UserUpdateRequest.java
+================
+package com.code.codenest.dto;
+
+public class UserUpdateRequest {
+    private String username;
+    private String email;
+    private String personal;
+    private String github;
+    private String linkedin;
+
+    // --- Getters ---
+    public String getUsername() { return username; }
+    public String getEmail() { return email; }
+    public String getPersonal() { return personal; }
+    public String getGithub() { return github; }
+    public String getLinkedin() { return linkedin; }
+
+    // --- Setters ---
+    public void setUsername(String username) { this.username = username; }
+    public void setEmail(String email) { this.email = email; }
+    public void setPersonal(String personal) { this.personal = personal; }
+    public void setGithub(String github) { this.github = github; }
+    public void setLinkedin(String linkedin) { this.linkedin = linkedin; }
+}
+
+================
+File: exception/SnippetExpiredException.java
+================
+package com.code.codenest.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.server.ResponseStatusException;
+
+@ResponseStatus(value = HttpStatus.FORBIDDEN, reason = "The snippet has expired.")
+public class SnippetExpiredException extends ResponseStatusException {
+
+    public SnippetExpiredException(HttpStatus status, String reason) {
+        super(status, reason);
+    }
+}
+
+================
+File: exception/SnippetNotFoundException.java
+================
+package com.code.codenest.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.server.ResponseStatusException;
+
+@ResponseStatus(value = HttpStatus.NOT_FOUND, reason = "No such code snippet")
+public class SnippetNotFoundException extends ResponseStatusException {
+
+    public SnippetNotFoundException(HttpStatus status, String reason) {
+        super(status, reason);
+    }
+}
+
+================
+File: model/BaseCredentials.java
+================
+package com.code.codenest.model;
+
+public class BaseCredentials {
+    private String email;
+    private String password;
+    private boolean remember;
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public boolean isRemember() {
+        return remember;
+    }
+
+    public void setRemember(boolean remember) {
+        this.remember = remember;
+    }
+}
+
+================
+File: model/ExpirationLog.java
+================
+package com.code.codenest.model;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "expiration_logs")
+public class ExpirationLog {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "snip_id")
+    private Long snipId;
+
+    @Column(name = "expired_at")
+    private LocalDateTime expiredAt = LocalDateTime.now();
+
+    @Column(name = "expiration_reason")
+    private String expirationReason; // TIME, VIEWS, DELETED
+
+    public ExpirationLog() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Long getSnipId() {
+        return snipId;
+    }
+
+    public void setSnipId(Long snipId) {
+        this.snipId = snipId;
+    }
+
+    public LocalDateTime getExpiredAt() {
+        return expiredAt;
+    }
+
+    public void setExpiredAt(LocalDateTime expiredAt) {
+        this.expiredAt = expiredAt;
+    }
+
+    public String getExpirationReason() {
+        return expirationReason;
+    }
+
+    public void setExpirationReason(String expirationReason) {
+        this.expirationReason = expirationReason;
+    }
+}
+
+================
+File: model/Group.java
+================
+package com.code.codenest.model;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
+
+@Entity
+@Table(name = "groups")
+public class Group {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @Column(name = "creator_id")
+    private Long creatorId;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<GroupMember> members = new HashSet<>();
+
+    public Group() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Long getCreatorId() {
+        return creatorId;
+    }
+
+    public void setCreatorId(Long creatorId) {
+        this.creatorId = creatorId;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Set<GroupMember> getMembers() {
+        return members;
+    }
+
+    public void setMembers(Set<GroupMember> members) {
+        this.members = members;
+    }
+}
+
+================
+File: model/GroupMember.java
+================
+package com.code.codenest.model;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "group_members")
+public class GroupMember {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "group_id")
+    private Group group;
+
+    @Column(name = "user_id")
+    private Long userId;
+
+    @Column(name = "joined_at")
+    private LocalDateTime joinedAt = LocalDateTime.now();
+
+    public GroupMember() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Group getGroup() {
+        return group;
+    }
+
+    public void setGroup(Group group) {
+        this.group = group;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public LocalDateTime getJoinedAt() {
+        return joinedAt;
+    }
+
+    public void setJoinedAt(LocalDateTime joinedAt) {
+        this.joinedAt = joinedAt;
+    }
+}
+
+================
+File: model/GroupSnip.java
+================
+package com.code.codenest.model;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "group_snips")
+public class GroupSnip {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "group_id")
+    private Group group;
+
+    @ManyToOne
+    @JoinColumn(name = "snip_id")
+    private Snip snip;
+
+    @Column(name = "shared_by_id")
+    private Long sharedById;
+
+    @Column(name = "shared_at")
+    private LocalDateTime sharedAt = LocalDateTime.now();
+
+    public GroupSnip() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Group getGroup() {
+        return group;
+    }
+
+    public void setGroup(Group group) {
+        this.group = group;
+    }
+
+    public Snip getSnip() {
+        return snip;
+    }
+
+    public void setSnip(Snip snip) {
+        this.snip = snip;
+    }
+
+    public Long getSharedById() {
+        return sharedById;
+    }
+
+    public void setSharedById(Long sharedById) {
+        this.sharedById = sharedById;
+    }
+
+    public LocalDateTime getSharedAt() {
+        return sharedAt;
+    }
+
+    public void setSharedAt(LocalDateTime sharedAt) {
+        this.sharedAt = sharedAt;
+    }
+}
+
+================
+File: model/Message.java
+================
+package com.code.codenest.model;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "messages")
+public class Message {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "sender_id")
+    private Long senderId;
+
+    @Column(name = "receiver_id")
+    private Long receiverId;
+
+    @Column(name = "snip_id")
+    private Long snipId;
+
+    @Column(columnDefinition = "text")
+    private String content;
+
+    @Column(name = "sent_at")
+    private LocalDateTime sentAt = LocalDateTime.now();
+
+    public Message() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Long getSenderId() {
+        return senderId;
+    }
+
+    public void setSenderId(Long senderId) {
+        this.senderId = senderId;
+    }
+
+    public Long getReceiverId() {
+        return receiverId;
+    }
+
+    public void setReceiverId(Long receiverId) {
+        this.receiverId = receiverId;
+    }
+
+    public Long getSnipId() {
+        return snipId;
+    }
+
+    public void setSnipId(Long snipId) {
+        this.snipId = snipId;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public LocalDateTime getSentAt() {
+        return sentAt;
+    }
+
+    public void setSentAt(LocalDateTime sentAt) {
+        this.sentAt = sentAt;
+    }
+}
+
+================
+File: model/Snip.java
+================
+package com.code.codenest.model;
+
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+@Entity
+@Table(name = "snips")
+public class Snip {
+    private static final Logger logger = LoggerFactory.getLogger(Snip.class);
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String uuid = UUID.randomUUID().toString();
+
+    @Column(name = "user_id")
+    private Long userId;
+
+    private String title;
+
+    @Column(columnDefinition = "text")
+    private String content;
+
+    @Column(name = "expiration_type")
+    private String expirationType; // "TIME" or "VIEWS"
+
+    @Column(name = "expiration_value")
+    private Long expirationValue;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "view_count")
+    private Long viewCount = 0L;
+
+    @Column(name = "is_deleted")
+    private boolean isDeleted = false;
+
+    // For backward compatibility
+    @Transient
+    private String authorUuid;
+
+    @OneToMany(mappedBy = "snip", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<SnipTag> snipTags = new HashSet<>();
+
+    @OneToMany(mappedBy = "snip", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ViewLog> viewLogs = new HashSet<>();
+
+    public Snip() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    // For backward compatibility
+    public String getAuthorUuid() {
+        return authorUuid;
+    }
+
+    // For backward compatibility
+    public void setAuthorUuid(String authorUuid) {
+        this.authorUuid = authorUuid;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    // For backward compatibility
+    public String getCode() {
+        return content;
+    }
+
+    // For backward compatibility
+    public void setCode(String code) {
+        this.content = code;
+    }
+
+    public String getExpirationType() {
+        return expirationType;
+    }
+
+    public void setExpirationType(String expirationType) {
+        this.expirationType = expirationType;
+    }
+
+    public Long getExpirationValue() {
+        return expirationValue;
+    }
+
+    public void setExpirationValue(Long expirationValue) {
+        this.expirationValue = expirationValue;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    // For backward compatibility
+    public String getDate() {
+        return createdAt.format(FORMATTER);
+    }
+
+    public Long getViewCount() {
+        return viewCount;
+    }
+
+    public void setViewCount(Long viewCount) {
+        this.viewCount = viewCount;
+    }
+
+    public void increaseViewCount() {
+        viewCount++;
+    }
+
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
+    }
+
+    // For backward compatibility
+    public void setTimeLimit(long seconds) {
+        this.expirationType = "TIME";
+        this.expirationValue = seconds;
+    }
+
+    // For backward compatibility
+    public long getTimeLimit() {
+        return "TIME".equals(expirationType) ? expirationValue : 0L;
+    }
+
+    // For backward compatibility
+    public void setViewLimit(long viewLimit) {
+        this.expirationType = "VIEWS";
+        this.expirationValue = viewLimit;
+    }
+
+    // For backward compatibility
+    public long getViewLimit() {
+        return "VIEWS".equals(expirationType) ? expirationValue : 0L;
+    }
+
+    @JsonIgnore
+    public boolean isAccessible() {
+        // Add logging here
+        logger.debug("Checking accessibility for Snip UUID {}: isDeleted={}, expirationType={}, expirationValue={}, viewCount={}",
+                this.uuid, this.isDeleted, this.expirationType, this.expirationValue, this.viewCount);
+
+        if (isDeleted) {
+            logger.debug("Snip {} inaccessible: isDeleted=true", this.uuid);
+            return false;
+        }
+
+        boolean timeOk = true;
+        if ("TIME".equals(expirationType) && expirationValue != null && expirationValue > 0) {
+            LocalDateTime expiryTime = createdAt.plusSeconds(expirationValue);
+            timeOk = LocalDateTime.now().isBefore(expiryTime);
+            logger.debug("Snip {} time check: expiryTime={}, now={}, timeOk={}", this.uuid, expiryTime, LocalDateTime.now(), timeOk);
+        }
+
+        boolean viewsOk = true;
+        if ("VIEWS".equals(expirationType) && expirationValue != null && expirationValue > 0) {
+            viewsOk = viewCount < expirationValue;
+            logger.debug("Snip {} views check: viewCount={}, expirationValue={}, viewsOk={}", this.uuid, viewCount, expirationValue, viewsOk);
+        }
+
+        boolean accessible = timeOk && viewsOk;
+        logger.debug("Snip {} final accessibility: {}", this.uuid, accessible);
+        return accessible;
+    }
+
+    // For backward compatibility
+    @JsonGetter("remainingSeconds")
+    public long getRemainingSeconds() {
+        if ("TIME".equals(expirationType) && expirationValue > 0) {
+            LocalDateTime expiryTime = createdAt.plusSeconds(expirationValue);
+            if (LocalDateTime.now().isBefore(expiryTime)) {
+                return Duration.between(LocalDateTime.now(), expiryTime).getSeconds();
+            }
+        }
+        return 0;
+    }
+
+    // For backward compatibility
+    @JsonGetter("remainingViews")
+    public long getRemainingViews() {
+        if ("VIEWS".equals(expirationType) && expirationValue > 0) {
+            return Math.max(expirationValue - viewCount, 0);
+        }
+        return 0;
+    }
+
+    // For backward compatibility
+    @JsonGetter("expiryDate")
+    public String getExpiryDate() {
+        if ("TIME".equals(expirationType) && expirationValue > 0) {
+            return createdAt.plusSeconds(expirationValue).format(FORMATTER);
+        }
+        return createdAt.format(FORMATTER);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Snip snip = (Snip) o;
+        return uuid.equals(snip.uuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return uuid.hashCode();
+    }
+}
+
+================
+File: model/SnipTag.java
+================
+package com.code.codenest.model;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "snip_tags")
+public class SnipTag {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "snip_id")
+    private Snip snip;
+
+    @ManyToOne
+    @JoinColumn(name = "tag_id")
+    private Tag tag;
+
+    public SnipTag() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Snip getSnip() {
+        return snip;
+    }
+
+    public void setSnip(Snip snip) {
+        this.snip = snip;
+    }
+
+    public Tag getTag() {
+        return tag;
+    }
+
+    public void setTag(Tag tag) {
+        this.tag = tag;
+    }
+}
+
+================
+File: model/Tag.java
+================
+package com.code.codenest.model;
+
+import jakarta.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
+
+@Entity
+@Table(name = "tags")
+public class Tag {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(unique = true)
+    private String name;
+
+    @OneToMany(mappedBy = "tag", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<SnipTag> snipTags = new HashSet<>();
+
+    public Tag() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Set<SnipTag> getSnipTags() {
+        return snipTags;
+    }
+
+    public void setSnipTags(Set<SnipTag> snipTags) {
+        this.snipTags = snipTags;
+    }
+}
+
+================
+File: model/User.java
+================
+package com.code.codenest.model;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Entity
+@Table(name = "users")
+@JsonIgnoreProperties({"id"})
+public class User {
+    @Transient
+    public static final User UNKNOWN = new User("00000000-0000-0000-0000-000000000000", "Unknown");
+    static {
+        UNKNOWN.username = "Unknown";
+    }
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String uuid = UUID.randomUUID().toString();
+
+    @Column(unique = true)
+    private String username;
+
+    @Column(unique = true)
+    private String email;
+
+    private String passwordHash;
+
+    private String personal;
+    private String github;
+    private String linkedin;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    public User() {
+    }
+
+    public User(String uuid, String username) {
+        this.uuid = uuid;
+        this.username = username;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    @JsonIgnore
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public boolean checkPassword(String password) {
+        return getHexStringFromByteArray(getPasswordHashArray(password)).equals(passwordHash);
+    }
+
+    public void setPassword(String password) {
+        this.passwordHash = getHexStringFromByteArray(getPasswordHashArray(password));
+    }
+
+    // For backward compatibility
+    public String getName() {
+        return username;
+    }
+
+    // For backward compatibility
+    public void setName(String name) {
+        this.username = name;
+    }
+
+    public String getPersonal() {
+        return personal;
+    }
+
+    public void setPersonal(String personal) {
+        this.personal = personal;
+    }
+
+    public String getGithub() {
+        return github;
+    }
+
+    public void setGithub(String github) {
+        this.github = github;
+    }
+
+    public String getLinkedin() {
+        return linkedin;
+    }
+
+    public void setLinkedin(String linkedin) {
+        this.linkedin = linkedin;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return uuid.equals(user.uuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return uuid.hashCode();
+    }
+
+    private String getHexStringFromByteArray(byte[] array) {
+        return new BigInteger(1, array).toString(16);
+    }
+
+    private byte[] getPasswordHashArray(String password) {
+        try {
+            return MessageDigest.getInstance("SHA3-512").digest(password.getBytes(StandardCharsets.UTF_8));
+        } catch (NoSuchAlgorithmException ignored) {
+            return new byte[0];
+        }
+    }
+}
+
+================
+File: model/ViewLog.java
+================
+package com.code.codenest.model;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "view_logs")
+public class ViewLog {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "snip_id", nullable = false)
+    private Snip snip;
+
+    @Column(name = "viewer_id")
+    private Long viewerId;
+
+    @Column(name = "viewed_at")
+    private LocalDateTime viewedAt = LocalDateTime.now();
+
+    public ViewLog() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Snip getSnip() {
+        return snip;
+    }
+
+    public void setSnip(Snip snip) {
+        this.snip = snip;
+    }
+
+    public Long getViewerId() {
+        return viewerId;
+    }
+
+    public void setViewerId(Long viewerId) {
+        this.viewerId = viewerId;
+    }
+
+    public LocalDateTime getViewedAt() {
+        return viewedAt;
+    }
+
+    public void setViewedAt(LocalDateTime viewedAt) {
+        this.viewedAt = viewedAt;
+    }
+}
+
+================
+File: repository/ExpirationLogRepository.java
+================
+package com.code.codenest.repository;
+
+import com.code.codenest.model.ExpirationLog;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface ExpirationLogRepository extends JpaRepository<ExpirationLog, Long> {
+    List<ExpirationLog> findBySnipId(Long snipId);
+}
+
+================
+File: repository/GroupMemberRepository.java
+================
+package com.code.codenest.repository;
+
+import com.code.codenest.model.GroupMember;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> {
+    List<GroupMember> findByGroupId(Long groupId);
+    List<GroupMember> findByUserId(Long userId);
+    Optional<GroupMember> findByGroupIdAndUserId(Long groupId, Long userId);
+    long countByGroupId(Long groupId);
+
+    @Transactional
+    void deleteByGroupIdAndUserId(Long groupId, Long userId);
+}
+
+================
+File: repository/GroupRepository.java
+================
+package com.code.codenest.repository;
+
+import com.code.codenest.model.Group;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface GroupRepository extends JpaRepository<Group, Long> {
+    List<Group> findByCreatorId(Long creatorId);
+}
+
+================
+File: repository/GroupSnipRepository.java
+================
+package com.code.codenest.repository;
+
+import com.code.codenest.model.GroupSnip;
+import com.code.codenest.model.Snip;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface GroupSnipRepository extends JpaRepository<GroupSnip, Long> {
+    // Find all snippets shared with a group
+    List<GroupSnip> findByGroupId(Long groupId);
+
+    // Find all groups a snippet is shared with
+    List<GroupSnip> findBySnipId(Long snipId);
+
+    // Check if a specific snippet is already shared with a group
+    Optional<GroupSnip> findByGroupIdAndSnipId(Long groupId, Long snippetId);
+
+    // Get snippet details for a group with author info
+    @Query("SELECT gs FROM GroupSnip gs JOIN FETCH gs.snip s WHERE gs.group.id = :groupId ORDER BY gs.sharedAt DESC")
+    List<GroupSnip> findByGroupIdWithSnips(@Param("groupId") Long groupId);
+}
+
+================
+File: repository/MessageRepository.java
+================
+package com.code.codenest.repository;
+
+import com.code.codenest.model.Message;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface MessageRepository extends JpaRepository<Message, Long> {
+    List<Message> findBySenderIdAndReceiverId(Long senderId, Long receiverId);
+    List<Message> findByReceiverIdOrderBySentAtDesc(Long receiverId);
+    List<Message> findBySenderIdOrderBySentAtDesc(Long senderId);
+
+    // Query to get all messages between two users, sorted by time
+    @Query("SELECT m FROM Message m WHERE (m.senderId = :userId1 AND m.receiverId = :userId2) OR (m.senderId = :userId2 AND m.receiverId = :userId1) ORDER BY m.sentAt ASC")
+    List<Message> findConversation(@Param("userId1") Long userId1, @Param("userId2") Long userId2);
+}
+
+================
+File: repository/SnipRepository.java
+================
+package com.code.codenest.repository;
+
+import com.code.codenest.model.Snip;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface SnipRepository extends JpaRepository<Snip, Long> {
+    Optional<Snip> findByUuid(String uuid);
+
+    @Query("SELECT s FROM Snip s WHERE s.isDeleted = false ORDER BY s.createdAt DESC") // Use createdAt or id
+    List<Snip> findTop10ByOrderByCreatedAtDesc();
+
+    default List<Snip> findLatest10() {
+        return findTop10ByOrderByCreatedAtDesc();
+    }
+
+    List<Snip> findByUserIdOrderByIdDesc(Long userId);
+}
+
+================
+File: repository/SnipTagRepository.java
+================
+package com.code.codenest.repository;
+
+import com.code.codenest.model.SnipTag;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface SnipTagRepository extends JpaRepository<SnipTag, Long> {
+    List<SnipTag> findBySnipId(Long snipId);
+    List<SnipTag> findByTagId(Long tagId);
+    void deleteBySnipIdAndTagId(Long snipId, Long tagId);
+}
+
+================
+File: repository/TagRepository.java
+================
+package com.code.codenest.repository;
+
+import com.code.codenest.model.Tag;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+@Repository
+public interface TagRepository extends JpaRepository<Tag, Long> {
+    Optional<Tag> findByName(String name);
+}
+
+================
+File: repository/UserRepository.java
+================
+package com.code.codenest.repository;
+
+import com.code.codenest.model.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+@Repository
+public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByEmail(String email);
+    Optional<User> findByUuid(String uuid);
+    Optional<User> findByUsername(String username);
+
+    default User getByUuid(String uuid) {
+        return findByUuid(uuid).orElse(User.UNKNOWN);
+    }
+}
+
+================
+File: repository/ViewLogRepository.java
+================
+package com.code.codenest.repository;
+
+import com.code.codenest.model.ViewLog;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface ViewLogRepository extends JpaRepository<ViewLog, Long> {
+    List<ViewLog> findBySnipId(Long snipId);
+    List<ViewLog> findByViewerId(Long viewerId);
+}
+
+
+
+================================================================
+End of Codebase
+================================================================

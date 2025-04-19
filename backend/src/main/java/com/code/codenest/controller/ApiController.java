@@ -1,29 +1,34 @@
 package com.code.codenest.controller;
 
-import com.code.codenest.model.Author;
-import com.code.codenest.model.BaseCredentials;
-import com.code.codenest.model.CodeSnippet;
+import com.code.codenest.dto.SnipCreateRequest;
+import com.code.codenest.dto.SnipResponse;
+import com.code.codenest.dto.UserResponse;
 import com.code.codenest.exception.SnippetNotFoundException;
-import com.code.codenest.repository.AuthorRepository;
-import com.code.codenest.repository.CodeSnippetRepository;
-import com.code.codenest.dto.SnippetCreateRequest;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-
+import com.code.codenest.model.*;
+import com.code.codenest.repository.*;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.web.server.ResponseStatusException;
+import com.code.codenest.dto.SnipResponse;
+import com.code.codenest.dto.UserResponse;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.code.codenest.dto.UserUpdateRequest;
+
+import java.util.stream.Collectors;
+import java.util.Collections;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -36,30 +41,209 @@ public class ApiController {
         RESPONSE_HEADERS.setContentType(MediaType.valueOf("application/json; charset=UTF-8"));
     }
 
-    private final AuthorRepository authorRepository;
-    private final CodeSnippetRepository codeSnippetRepository;
+    private final UserRepository userRepository;
+    private final SnipRepository snipRepository;
+    private final TagRepository tagRepository;
+    private final SnipTagRepository snipTagRepository;
+    private final ViewLogRepository viewLogRepository;
+    private final ExpirationLogRepository expirationLogRepository;
 
     @Autowired
-    private ApiController(AuthorRepository authorRepo, CodeSnippetRepository codeRepo) {
-        this.authorRepository = authorRepo;
-        this.codeSnippetRepository = codeRepo;
+    private ApiController(
+            UserRepository userRepo,
+            SnipRepository snipRepo,
+            TagRepository tagRepo,
+            SnipTagRepository snipTagRepo,
+            ViewLogRepository viewLogRepo,
+            ExpirationLogRepository expirationLogRepo) {
+        this.userRepository = userRepo;
+        this.snipRepository = snipRepo;
+        this.tagRepository = tagRepo;
+        this.snipTagRepository = snipTagRepo;
+        this.viewLogRepository = viewLogRepo;
+        this.expirationLogRepository = expirationLogRepo;
+    }
+
+    @PutMapping("/user/profile")
+    public ResponseEntity<Map<String, Object>> updateProfile(
+            @RequestBody UserUpdateRequest request,
+            @CookieValue(name = "uuid", defaultValue = "") String userUuid) {
+
+        if (userUuid.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authentication required"));
+        }
+
+        User user = userRepository.findByUuid(userUuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authentication session."));
+
+        boolean updated = false;
+
+        // Update username if provided and different
+        if (request.getUsername() != null && !request.getUsername().trim().isEmpty() && !request.getUsername().trim().equals(user.getUsername())) {
+            // Check if username is already taken by another user
+            Optional<User> existingUser = userRepository.findByUsername(request.getUsername().trim());
+            if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId())) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Username already taken"));
+            }
+            user.setUsername(request.getUsername().trim());
+            updated = true;
+            logger.info("Updating username for user {}", user.getId());
+        }
+
+        // Update email if provided and different
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty() && !request.getEmail().trim().equalsIgnoreCase(user.getEmail())) {
+            String newEmail = request.getEmail().trim();
+            // Check if email is already taken by another user
+            Optional<User> existingUser = userRepository.findByEmail(newEmail);
+            if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId())) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Email already registered by another user"));
+            }
+            user.setEmail(newEmail);
+            updated = true;
+            logger.info("Updating email for user {}", user.getId());
+        }
+
+        // Update optional fields (allow setting to null or empty)
+        if (request.getPersonal() != null && !request.getPersonal().equals(user.getPersonal())) {
+            user.setPersonal(request.getPersonal().trim().isEmpty() ? null : request.getPersonal().trim());
+            updated = true;
+            logger.info("Updating personal link for user {}", user.getId());
+        }
+        if (request.getGithub() != null && !request.getGithub().equals(user.getGithub())) {
+            user.setGithub(request.getGithub().trim().isEmpty() ? null : request.getGithub().trim());
+            updated = true;
+            logger.info("Updating github link for user {}", user.getId());
+        }
+        if (request.getLinkedin() != null && !request.getLinkedin().equals(user.getLinkedin())) {
+            user.setLinkedin(request.getLinkedin().trim().isEmpty() ? null : request.getLinkedin().trim());
+            updated = true;
+            logger.info("Updating linkedin link for user {}", user.getId());
+        }
+
+
+        if (updated) {
+            User savedUser = userRepository.save(user);
+            logger.info("User {} profile updated successfully.", savedUser.getId());
+            // Return updated user data
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Profile updated successfully",
+                    "user", new UserResponse(savedUser) // Return updated user info
+            ));
+        } else {
+            logger.info("No changes detected for user {} profile update.", user.getId());
+            return ResponseEntity.ok(Map.of("success", true, "message", "No changes detected"));
+        }
+    }
+
+    @GetMapping("/user/snippets")
+    public ResponseEntity<Map<String, Object>> getUserSnippets(
+            @CookieValue(name = "uuid", defaultValue = "") String userUuid) {
+
+        if (userUuid.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authentication required"));
+        }
+
+        User user = userRepository.findByUuid(userUuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authentication session."));
+
+        List<Snip> userSnips = snipRepository.findByUserIdOrderByIdDesc(user.getId());
+
+        if (userSnips.isEmpty()) {
+            return ResponseEntity.ok(Map.of("success", true, "snippets", Collections.emptyList()));
+        }
+
+        UserResponse authorResponse = new UserResponse(user); // Author is always the current user
+
+        List<SnipResponse> snipResponses = userSnips.stream()
+                .map(snip -> {
+                    // Get tags for this snip
+                    List<String> tags = snipTagRepository.findBySnipId(snip.getId())
+                            .stream()
+                            .map(st -> st.getTag().getName())
+                            .collect(Collectors.toList());
+
+                    boolean isAccessible = snip.isAccessible(); // Calculate beforehand
+
+                    // Create the response object
+                    SnipResponse responseDto = new SnipResponse(snip, authorResponse, tags);
+
+                    // *** ENSURE isAccessible is set (redundant if constructor is reliable) ***
+//                    responseDto.setAccessible(isAccessible); // SnipResponse needs a setter if you use this line
+
+                    return responseDto; // Return the DTO created by the constructor
+                })
+                .collect(Collectors.toList());
+
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("snippets", snipResponses);
+        // No need to return separate "authors" list as it's always the same user
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("code/new")
-    public ResponseEntity<?> createSnippet(@RequestBody SnippetCreateRequest request) {
+    public ResponseEntity<?> createSnippet(
+            @RequestBody SnipCreateRequest request,
+            @CookieValue(name = "uuid", defaultValue = "") String userUuid) {
 
-        // Find author by name (Ensure findByName was added to AuthorRepository)
-        Author author = authorRepository.findByName(request.getAuthorName())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        String.format("Author '%s' not found.", request.getAuthorName())));
+        // --- Get User from Cookie ---
+        if (userUuid.isEmpty()) {
+            logger.warn("Attempt to create snippet without authentication cookie.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Authentication required to create snippet."));
+        }
 
-        CodeSnippet newSnippet = new CodeSnippet();
-        newSnippet.setCode(request.getCode());
-        newSnippet.setAuthorUuid(author.getUuid());
-        newSnippet.setTimeLimit(request.getTime_restriction()); // Ensure this uses plusSeconds
-        newSnippet.setViewLimit(request.getView_restriction());
+        User user = userRepository.findByUuid(userUuid)
+                .orElseThrow(() -> {
+                    logger.error("Authenticated user UUID {} not found in database.", userUuid);
+                    return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authentication session.");
+                });
+        logger.info("Received request to /api/code/new");
+        logger.info("Request DTO content: [{}]", request.getContent());
+        logger.info("Request Expiration Type: {}, Value: {}", request.getExpirationType(), request.getExpirationValue()); // Log received values
 
-        CodeSnippet savedSnippet = codeSnippetRepository.save(newSnippet);
+        Snip newSnippet = new Snip();
+        newSnippet.setTitle(request.getTitle());
+        newSnippet.setContent(request.getContent());
+        newSnippet.setUserId(user.getId());
+
+        newSnippet.setExpirationType(request.getExpirationType()); // Set type (can be null)
+        newSnippet.setExpirationValue(request.getExpirationValue()); // Set value (can be 0)
+        logger.info("Setting Snip Entity Expiration Type: {}, Value: {}", newSnippet.getExpirationType(), newSnippet.getExpirationValue());
+        // --- END CORRECTION ---
+
+        Snip savedSnippet = snipRepository.save(newSnippet);
+
+        // Process tags if present
+        if (request.getTags() != null && !request.getTags().isEmpty()) {
+            logger.info("Processing tags: {}", request.getTags());
+            for (String tagName : request.getTags()) {
+                if (tagName == null || tagName.trim().isEmpty()) {
+                    logger.warn("Skipping empty or null tag name.");
+                    continue;
+                }
+                String cleanTagName = tagName.trim();
+                Tag tag = tagRepository.findByName(cleanTagName)
+                        .orElseGet(() -> {
+                            logger.info("Tag '{}' not found, creating new tag.", cleanTagName);
+                            Tag newTag = new Tag();
+                            newTag.setName(cleanTagName);
+                            return tagRepository.save(newTag);
+                        });
+
+                SnipTag snipTag = new SnipTag();
+                snipTag.setSnip(savedSnippet);
+                snipTag.setTag(tag);
+                snipTagRepository.save(snipTag);
+            }
+        } else {
+            logger.info("No tags provided in request.");
+        }
 
         logger.debug("Created snippet via /api/code/new with UUID: {}", savedSnippet.getUuid());
         Map<String, Object> response = new HashMap<>();
@@ -69,19 +253,24 @@ public class ApiController {
     }
 
     @PostMapping("/register")
-    ResponseEntity<Map<String, Object>> createAuthor(@RequestBody Author author, HttpServletResponse response) {
+    ResponseEntity<Map<String, Object>> createUser(@RequestBody User user, HttpServletResponse response) {
         try {
-            // Validate the author data
-            if (author.getEmail() == null || author.getEmail().isEmpty()) {
+            // Validate the user data
+            if (user.getEmail() == null || user.getEmail().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Email is required"));
             }
 
             // Check if email already exists
-            if (authorRepository.findByEmail(author.getEmail()).isPresent()) {
+            if (userRepository.findByEmail(user.getEmail()).isPresent()) {
                 return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Email already registered"));
             }
 
-            var saved = authorRepository.save(author);
+            // Check if username already exists
+            if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Username already taken"));
+            }
+
+            var saved = userRepository.save(user);
 
             // Set the cookie for automatic login
             var cookie = new Cookie("uuid", saved.getUuid());
@@ -92,9 +281,9 @@ public class ApiController {
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "id", saved.getUuid(),
+                    "id", saved.getId(),
                     "uuid", saved.getUuid(),
-                    "name", saved.getName(),
+                    "username", saved.getUsername(),
                     "email", saved.getEmail()
             ));
         } catch (Exception e) {
@@ -106,27 +295,27 @@ public class ApiController {
     public ResponseEntity<Map<String, Object>> login(@RequestBody BaseCredentials credentials, HttpServletResponse response) {
         logger.debug("Login attempt for email: {}", credentials.getEmail());
 
-        var optAuthor = authorRepository.findByEmail(credentials.getEmail());
+        var optUser = userRepository.findByEmail(credentials.getEmail());
 
-        if (optAuthor.isPresent()) {
-            var author = optAuthor.get();
+        if (optUser.isPresent()) {
+            var user = optUser.get();
 
-            if (author.checkPassword(credentials.getPassword())) {
-                logger.info("Successful login for user: {}", author.getEmail());
+            if (user.checkPassword(credentials.getPassword())) {
+                logger.info("Successful login for user: {}", user.getEmail());
 
                 // Make sure cookie name is explicitly set
-                Cookie cookie = new Cookie("uuid", author.getUuid());
+                Cookie cookie = new Cookie("uuid", user.getUuid());
                 cookie.setHttpOnly(true);
                 cookie.setPath("/");
                 cookie.setMaxAge(credentials.isRemember() ? 1_166_000 : 360);
                 response.addCookie(cookie);
-                logger.debug("Auth cookie set for user: {}", author.getUuid());
+                logger.debug("Auth cookie set for user: {}", user.getUuid());
 
                 return ResponseEntity.ok(Map.of(
                         "success", true,
-                        "uuid", author.getUuid(),
-                        "name", author.getName(),
-                        "email", author.getEmail()
+                        "uuid", user.getUuid(),
+                        "username", user.getUsername(),
+                        "email", user.getEmail()
                 ));
             }
         }
@@ -154,14 +343,14 @@ public class ApiController {
             return ResponseEntity.status(401).body(Map.of("message", "Not authenticated"));
         }
 
-        Optional<Author> optAuthor = authorRepository.findByUuid(uuid);
-        if (optAuthor.isPresent()) {
-            Author author = optAuthor.get();
-            logger.debug("Auth check successful for user: {}", author.getName());
+        Optional<User> optUser = userRepository.findByUuid(uuid);
+        if (optUser.isPresent()) {
+            User user = optUser.get();
+            logger.debug("Auth check successful for user: {}", user.getUsername());
             return ResponseEntity.ok(Map.of(
-                    "uuid", author.getUuid(),
-                    "name", author.getName(),
-                    "email", author.getEmail()
+                    "uuid", user.getUuid(),
+                    "username", user.getUsername(),
+                    "email", user.getEmail()
             ));
         }
 
@@ -171,18 +360,30 @@ public class ApiController {
 
     @GetMapping("/code/latest")
     ResponseEntity<Map<String, Object>> getLatest10AsJson() {
-        List<CodeSnippet> snippetList = codeSnippetRepository.findLatest10();
-        List<Author> authorList = snippetList.stream()
-                .map(CodeSnippet::getAuthorUuid)
-                .map(authorRepository::getByUuid)
-                .toList();
+        List<Snip> snippetList = snipRepository.findLatest10();
 
-        snippetList.forEach(CodeSnippet::increaseViewCount);
-        codeSnippetRepository.saveAll(snippetList);
+        List<UserResponse> authorResponses = new ArrayList<>();
+        List<SnipResponse> snipResponses = new ArrayList<>();
+
+        for (Snip snip : snippetList) {
+            User user = userRepository.findById(snip.getUserId())
+                    .orElse(User.UNKNOWN);
+
+            List<String> tags = snipTagRepository.findBySnipId(snip.getId())
+                    .stream()
+                    .map(st -> st.getTag().getName())
+                    .collect(Collectors.toList());
+
+            UserResponse userResponse = new UserResponse(user);
+            SnipResponse snipResponse = new SnipResponse(snip, userResponse, tags);
+
+            authorResponses.add(userResponse);
+            snipResponses.add(snipResponse);
+        }
 
         Map<String, Object> response = new HashMap<>();
-        response.put("snippets", snippetList);
-        response.put("authors", authorList);
+        response.put("snippets", snipResponses);
+        response.put("authors", authorResponses);
 
         return ResponseEntity.ok(response);
     }
@@ -190,31 +391,63 @@ public class ApiController {
     @GetMapping("/code/{uuid}")
     ResponseEntity<Map<String, Object>> getByIdAsJson(
             @PathVariable String uuid,
-            @RequestParam(required = false, defaultValue = "false") boolean skipIncrement) {
+            @RequestParam(required = false, defaultValue = "false") boolean skipIncrement,
+            @CookieValue(name = "uuid", required = false) String userUuid) {
 
         logger.debug("Get snippet by UUID: {}, skipIncrement: {}", uuid, skipIncrement);
 
-        var optionalCodeSnippet = codeSnippetRepository.findByUuid(uuid);
+        var optionalSnippet = snipRepository.findByUuid(uuid);
 
-        if (optionalCodeSnippet.isPresent()) {
-            var codeSnippet = optionalCodeSnippet.get();
+        if (optionalSnippet.isPresent()) {
+            var snip = optionalSnippet.get();
 
-            if (codeSnippet.isAccessible()) {
+            if (snip.isAccessible()) {
                 // Only increment view count if we're not skipping
                 if (!skipIncrement) {
-                    codeSnippet.increaseViewCount();
-                    codeSnippet = codeSnippetRepository.save(codeSnippet);
+                    snip.increaseViewCount();
+                    snip = snipRepository.save(snip);
                     logger.debug("Incremented view count for snippet: {}, new count: {}",
-                            uuid, codeSnippet.getViewCount());
+                            uuid, snip.getViewCount());
+
+                    // Create view log if user is authenticated
+                    if (userUuid != null && !userUuid.isEmpty()) {
+                        User viewer = userRepository.findByUuid(userUuid).orElse(null);
+                        if (viewer != null) {
+                            ViewLog viewLog = new ViewLog();
+                            viewLog.setSnip(snip);
+                            viewLog.setViewerId(viewer.getId());
+                            viewLogRepository.save(viewLog);
+                        }
+                    }
+
+                    // Check if snippet expired due to views
+                    if ("VIEWS".equals(snip.getExpirationType()) &&
+                            snip.getViewCount() >= snip.getExpirationValue()) {
+                        ExpirationLog expLog = new ExpirationLog();
+                        expLog.setSnipId(snip.getId());
+                        expLog.setExpirationReason("VIEWS");
+                        expirationLogRepository.save(expLog);
+                    }
                 } else {
                     logger.debug("Skipped incrementing view count for snippet: {}", uuid);
                 }
 
-                Author author = authorRepository.getByUuid(codeSnippet.getAuthorUuid());
+                User author = userRepository.findById(snip.getUserId())
+                        .orElse(User.UNKNOWN);
+
+                // Get tags for this snip
+                List<String> tags = snipTagRepository.findBySnipId(snip.getId())
+                        .stream()
+                        .map(st -> st.getTag().getName())
+                        .collect(Collectors.toList());
+
+                UserResponse authorResponse = new UserResponse(author);
+                SnipResponse snipResponse = new SnipResponse(snip, authorResponse, tags);
 
                 Map<String, Object> response = new HashMap<>();
-                response.put("snippet", codeSnippet);
-                response.put("author", author);
+                response.put("snippet", snipResponse);
+                response.put("author", authorResponse);
+                response.put("tags", tags);
 
                 return ResponseEntity.ok(response);
             } else {
@@ -263,23 +496,45 @@ public class ApiController {
 
     @GetMapping("/debug/snippet/{uuid}")
     public ResponseEntity<Map<String, Object>> debugSnippet(@PathVariable String uuid) {
-        var optionalCodeSnippet = codeSnippetRepository.findByUuid(uuid);
+        var optionalCodeSnippet = snipRepository.findByUuid(uuid);
 
         if (optionalCodeSnippet.isPresent()) {
             var snippet = optionalCodeSnippet.get();
 
             Map<String, Object> debugInfo = new HashMap<>();
             debugInfo.put("uuid", snippet.getUuid());
-            debugInfo.put("timeLimit", snippet.getTimeLimit());
-            debugInfo.put("creationDate", snippet.getDate());
-            debugInfo.put("expiryDate", snippet.getExpiryDate());
+            debugInfo.put("title", snippet.getTitle());
+            debugInfo.put("userId", snippet.getUserId());
+            debugInfo.put("expirationType", snippet.getExpirationType());
+            debugInfo.put("expirationValue", snippet.getExpirationValue());
+            debugInfo.put("creationDate", snippet.getCreatedAt());
             debugInfo.put("currentServerTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu/MM/dd HH:mm:ss")));
-            debugInfo.put("isTimeRestricted", snippet.isRestrictedByTime());
+            debugInfo.put("isTimeRestricted", "TIME".equals(snippet.getExpirationType()));
             debugInfo.put("remainingSeconds", snippet.getRemainingSeconds());
             debugInfo.put("isExpired", !snippet.isAccessible());
-            debugInfo.put("viewLimit", snippet.getViewLimit());
             debugInfo.put("viewCount", snippet.getViewCount());
-            debugInfo.put("isViewRestricted", snippet.isRestrictedByViews());
+            debugInfo.put("isViewRestricted", "VIEWS".equals(snippet.getExpirationType()));
+            debugInfo.put("isDeleted", snippet.isDeleted());
+
+            // Tags
+            List<String> tags = snipTagRepository.findBySnipId(snippet.getId())
+                    .stream()
+                    .map(st -> st.getTag().getName())
+                    .collect(Collectors.toList());
+            debugInfo.put("tags", tags);
+
+            // View logs
+            List<Map<String, Object>> viewLogs = viewLogRepository.findBySnipId(snippet.getId())
+                    .stream()
+                    .map(vl -> {
+                        Map<String, Object> logInfo = new HashMap<>();
+                        logInfo.put("id", vl.getId());
+                        logInfo.put("viewerId", vl.getViewerId());
+                        logInfo.put("viewedAt", vl.getViewedAt());
+                        return logInfo;
+                    })
+                    .collect(Collectors.toList());
+            debugInfo.put("viewLogs", viewLogs);
 
             return ResponseEntity.ok(debugInfo);
         }
